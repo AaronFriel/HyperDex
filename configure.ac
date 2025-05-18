@@ -59,9 +59,9 @@ AC_ARG_ENABLE([java-bindings], [AS_HELP_STRING([--enable-java-bindings],
 
 JNI_CPPFLAGS=
 if test x"${java_bindings}" = xyes; then
-    AC_PROG_JAR
-    AC_PROG_JAVAC
-    AC_JNI_INCLUDE_DIR
+    AX_PROG_JAR
+    AX_PROG_JAVAC
+    AX_JNI_INCLUDE_DIR
     found_jnidir=no
     for jnidir in ${JNI_INCLUDE_DIRS}
     do
@@ -191,7 +191,7 @@ AC_ARG_ENABLE([python_bindings], [AS_HELP_STRING([--enable-python-bindings],
               [build Python bindings @<:@default: no@:>@])],
               [python_bindings=${enableval}], [python_bindings=no])
 if test x"${python_bindings}" = xyes; then
-    AC_PYTHON_DEVEL([>= '2.6'])
+    AX_PYTHON_DEVEL([>= '2.6'])
     AS_CASE([$PYTHON_VERSION], [3*], [pythonsym=PyInit_], [2*], [pythonsym=init], [])
     AC_SUBST([PYTHON_SYMBOL], [${pythonsym}])
 fi
