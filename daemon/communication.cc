@@ -172,7 +172,6 @@ communication :: send_client(const virtual_server_id& from,
                 return false;
             case BUSYBEE_SHUTDOWN:
             case BUSYBEE_SEE_ERRNO:
-            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:
             case BUSYBEE_INTERRUPTED:
@@ -228,7 +227,6 @@ communication :: send(const virtual_server_id& from,
                 handle_disruption(to.get());
                 return false;
             case BUSYBEE_SHUTDOWN:
-            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:
@@ -286,7 +284,6 @@ communication :: send(const virtual_server_id& from,
                 return false;
             case BUSYBEE_SHUTDOWN:
             case BUSYBEE_SEE_ERRNO:
-            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:
             case BUSYBEE_INTERRUPTED:
@@ -336,7 +333,6 @@ communication :: send(const virtual_server_id& vto,
                 handle_disruption(to.get());
                 return false;
             case BUSYBEE_SHUTDOWN:
-            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:
@@ -394,7 +390,6 @@ communication :: send_exact(const virtual_server_id& from,
                 return false;
             case BUSYBEE_SHUTDOWN:
             case BUSYBEE_SEE_ERRNO:
-            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:
             case BUSYBEE_INTERRUPTED:
@@ -438,7 +433,6 @@ communication :: recv(e::garbage_collector::thread_state* ts,
                 continue;
             case BUSYBEE_INTERRUPTED:
                 continue;
-            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:

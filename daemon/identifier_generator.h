@@ -63,11 +63,10 @@ class identifier_generator
     private:
         identifier_generator(const identifier_generator&);
         identifier_generator& operator = (const identifier_generator&);
-        static uint64_t hashid(region_id ri) { return ri.get(); }
+        static uint64_t hashid(uint64_t ri) { return ri; }
 
     private:
-        const static region_id defaultri;
-        typedef e::ao_hash_map<region_id, uint64_t, hashid, defaultri> generator_map_t;
+        typedef e::ao_hash_map<uint64_t, uint64_t, hashid, 0> generator_map_t;
         generator_map_t m_generators;
 };
 

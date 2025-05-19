@@ -37,7 +37,6 @@
 using hyperdex::identifier_collector;
 using hyperdex::region_id;
 
-const region_id identifier_collector::defaultri;
 
 identifier_collector :: identifier_collector(e::garbage_collector* gc)
     : m_gc(gc)
@@ -54,7 +53,7 @@ identifier_collector :: bump(const region_id& ri, uint64_t lb)
 {
     e::compat::shared_ptr<e::seqno_collector> sc;
 
-    if (!m_collectors.get(ri, &sc))
+    if (!m_collectors.get(ri.get(), &sc))
     {
         abort();
     }
@@ -67,7 +66,7 @@ identifier_collector :: collect(const region_id& ri, uint64_t seqno)
 {
     e::compat::shared_ptr<e::seqno_collector> sc;
 
-    if (!m_collectors.get(ri, &sc))
+    if (!m_collectors.get(ri.get(), &sc))
     {
         abort();
     }
@@ -80,7 +79,7 @@ identifier_collector :: lower_bound(const region_id& ri)
 {
     e::compat::shared_ptr<e::seqno_collector> sc;
 
-    if (!m_collectors.get(ri, &sc))
+    if (!m_collectors.get(ri.get(), &sc))
     {
         abort();
     }
@@ -99,14 +98,14 @@ identifier_collector :: adopt(region_id* ris, size_t ris_sz)
     {
         e::compat::shared_ptr<e::seqno_collector> sc;
 
-        if (!m_collectors.get(ris[i], &sc))
+        if (!m_collectors.get(ris[i].get(), &sc))
         {
             sc = e::compat::shared_ptr<e::seqno_collector>(new e::seqno_collector(m_gc));
             sc->collect(0);
         }
 
         assert(sc);
-        new_collectors.put(ris[i], sc);
+        new_collectors.put(ris[i].get(), sc);
     }
 
     m_collectors.swap(&new_collectors);

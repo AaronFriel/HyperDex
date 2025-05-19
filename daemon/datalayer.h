@@ -203,14 +203,13 @@ class datalayer
         returncode handle_error(leveldb::Status st);
         void collect_lower_checkpoints(uint64_t checkpoint_gc);
 
-        const static region_id defaultri;
-        static uint64_t id(region_id ri) { return ri.get(); }
+        static uint64_t id_u64(uint64_t ri) { return ri; }
 
     private:
         daemon* m_daemon;
         leveldb_db_ptr m_db;
         std::vector<index_state> m_indices;
-        e::ao_hash_map<region_id, uint64_t, id, defaultri> m_versions;
+        e::ao_hash_map<uint64_t, uint64_t, id_u64, 0> m_versions;
         const std::auto_ptr<checkpointer_thread> m_checkpointer;
         const std::auto_ptr<wiper_indexer_mediator> m_mediator;
         const std::auto_ptr<indexer_thread> m_indexer;
