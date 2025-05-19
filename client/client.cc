@@ -38,7 +38,7 @@
 #include <e/strescape.h>
 
 // BusyBee
-#include <busybee_utils.h>
+#include <busybee.h>
 
 // HyperDex
 #include "visibility.h"

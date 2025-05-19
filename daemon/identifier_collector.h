@@ -63,11 +63,10 @@ class identifier_collector
     private:
         identifier_collector(const identifier_collector&);
         identifier_collector& operator = (const identifier_collector&);
-        static uint64_t id(region_id ri) { return ri.get(); }
+        static uint64_t id(uint64_t ri) { return ri; }
 
     private:
-        const static region_id defaultri;
-        typedef e::ao_hash_map<region_id, e::compat::shared_ptr<e::seqno_collector>, id, defaultri> collector_map_t;
+        typedef e::ao_hash_map<uint64_t, e::compat::shared_ptr<e::seqno_collector>, id, 0> collector_map_t;
         e::garbage_collector* m_gc;
         collector_map_t m_collectors;
 };

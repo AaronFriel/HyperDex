@@ -62,7 +62,7 @@ using hyperdex::admin;
 admin :: admin(const char* coordinator, uint16_t port)
     : m_coord(replicant_client_create(coordinator, port))
     , m_busybee_mapper(&m_config)
-    , m_busybee(&m_busybee_mapper, 0)
+    , m_busybee(busybee_client::create(&m_busybee_mapper))
     , m_config()
     , m_config_id(-1)
     , m_config_status()
@@ -844,7 +844,6 @@ admin :: loop(int timeout, hyperdex_admin_returncode* status)
             case BUSYBEE_SUCCESS:
                 break;
             case BUSYBEE_SEE_ERRNO:
-            case BUSYBEE_SEE_ERRNO:
                 ERROR(POLLFAILED) << "poll failed";
                 return -1;
             case BUSYBEE_DISRUPTED:
@@ -1088,7 +1087,6 @@ admin :: send(network_msgtype mt,
             handle_disruption(id);
             ERROR(SERVERERROR) << "server " << id.get() << " had a communication disruption";
             return false;
-        case BUSYBEE_SEE_ERRNO:
         case BUSYBEE_SEE_ERRNO:
             ERROR(POLLFAILED) << "poll failed";
             return false;

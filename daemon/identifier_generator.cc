@@ -38,7 +38,6 @@ using namespace e::atomic;
 using hyperdex::identifier_generator;
 using hyperdex::region_id;
 
-const region_id identifier_generator::defaultri;
 
 identifier_generator :: identifier_generator()
     : m_generators()
@@ -54,7 +53,7 @@ identifier_generator :: bump(const region_id& ri, uint64_t id)
 {
     uint64_t* val = NULL;
 
-    if (!m_generators.mod(ri, &val))
+    if (!m_generators.mod(ri.get(), &val))
     {
         return false;
     }
@@ -75,7 +74,7 @@ identifier_generator :: peek(const region_id& ri) const
     e::atomic::memory_barrier();
     uint64_t val = 0;
 
-    if (!m_generators.get(ri, &val))
+    if (!m_generators.get(ri.get(), &val))
     {
         abort();
     }
@@ -88,7 +87,7 @@ identifier_generator :: generate_id(const region_id& ri)
 {
     uint64_t* val = NULL;
 
-    if (!m_generators.mod(ri, &val))
+    if (!m_generators.mod(ri.get(), &val))
     {
         abort();
     }
@@ -105,12 +104,12 @@ identifier_generator :: adopt(region_id* ris, size_t ris_sz)
     {
         uint64_t count = 0;
 
-        if (!m_generators.get(ris[i], &count))
+        if (!m_generators.get(ris[i].get(), &count))
         {
             count = 1;
         }
 
-        new_generators.put(ris[i], count);
+        new_generators.put(ris[i].get(), count);
     }
 
     m_generators.swap(&new_generators);

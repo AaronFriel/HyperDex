@@ -41,7 +41,7 @@
 #include <e/popt.h>
 
 // BusyBee
-#include <busybee_utils.h>
+#include <busybee.h>
 
 // HyperDex
 #include "daemon/daemon.h"

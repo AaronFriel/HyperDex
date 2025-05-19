@@ -32,6 +32,7 @@ AM_CFLAGS    = -fvisibility=hidden $(WANAL_CFLAGS)
 AM_CXXFLAGS  = -fvisibility=hidden -fvisibility-inlines-hidden $(PO6_CFLAGS) $(E_CFLAGS) $(BUSYBEE_CFLAGS) $(HYPERLEVELDB_CFLAGS) $(REPLICANT_CFLAGS) $(MACAROONS_CFLAGS) $(TREADSTONE_CFLAGS) $(WANAL_CXXFLAGS)
 AM_MAKEFLAGS = --no-print-directory
 AM_YFLAGS = -d
+PANDOC ?= pandoc
 HELP2MAN_FLAGS = --no-discard-stderr --libtool --no-info --version-string=$(VERSION) --manual="HyperDex User Manual"
 TESTS_ENVIRONMENT = . $(abs_top_srcdir)/test/env.sh "${abs_top_srcdir}" "${abs_top_builddir}" "${VERSION}";
 AM_DISTCHECK_CONFIGURE_FLAGS = --enable-python-bindings
@@ -81,7 +82,7 @@ TESTS =
 ################################################################################
 
 %.h2m: %.md
-	$(pandoc_verbose)pandoc -s -w man -o $@ $<
+        $(pandoc_verbose)$(PANDOC) -s -w man -o $@ $<
 	$(sed_verbose)sed -e 's/^\.SH \(.*\)$$/[\1]/' -e 's/^.PP$$//' $@ > $@.tmp
 	@mv $@.tmp $@
 
