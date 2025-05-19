@@ -35,7 +35,7 @@
 #include <list>
 
 // BusyBee
-#include <busybee_st.h>
+#include <busybee.h>
 
 // Replicant
 #include <replicant.h>
@@ -255,7 +255,7 @@ class client
     private:
         replicant_client* m_coord;
         mapper m_busybee_mapper;
-        busybee_st m_busybee;
+        const std::auto_ptr<busybee_client> m_busybee;
         // configuration
         configuration m_config;
         int64_t m_config_id;

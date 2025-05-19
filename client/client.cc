@@ -84,7 +84,7 @@ using hyperdex::microtransaction;
 client :: client(const char* coordinator, uint16_t port)
     : m_coord(replicant_client_create(coordinator, port))
     , m_busybee_mapper(&m_config)
-    , m_busybee(&m_busybee_mapper, 0)
+    , m_busybee(busybee_client::create(&m_busybee_mapper))
     , m_config()
     , m_config_id(-1)
     , m_config_status()
@@ -109,14 +109,14 @@ client :: client(const char* coordinator, uint16_t port)
         throw std::bad_alloc();
     }
 
-    m_busybee.set_external_fd(replicant_client_poll_fd(m_coord));
-    m_busybee.set_external_fd(m_flagfd.poll_fd());
+    m_busybee->set_external_fd(replicant_client_poll_fd(m_coord));
+    m_busybee->set_external_fd(m_flagfd.poll_fd());
 }
 
 client :: client(const char* conn_str)
     : m_coord(replicant_client_create_conn_str(conn_str))
     , m_busybee_mapper(&m_config)
-    , m_busybee(&m_busybee_mapper, 0)
+    , m_busybee(busybee_client::create(&m_busybee_mapper))
     , m_config()
     , m_config_id(-1)
     , m_config_status()
@@ -141,8 +141,8 @@ client :: client(const char* conn_str)
         throw std::bad_alloc();
     }
 
-    m_busybee.set_external_fd(replicant_client_poll_fd(m_coord));
-    m_busybee.set_external_fd(m_flagfd.poll_fd());
+    m_busybee->set_external_fd(replicant_client_poll_fd(m_coord));
+    m_busybee->set_external_fd(m_flagfd.poll_fd());
 }
 
 client :: ~client() throw ()
@@ -555,8 +555,7 @@ client :: loop(int timeout, hyperdex_client_returncode* status)
 
         uint64_t sid_num;
         std::auto_ptr<e::buffer> msg;
-        m_busybee.set_timeout(timeout);
-        busybee_returncode rc = m_busybee.recv(&sid_num, &msg);
+        busybee_returncode rc = m_busybee->recv(timeout, &sid_num, &msg);
         server_id id(sid_num);
 
         switch (rc)
@@ -641,8 +640,7 @@ client :: loop(int timeout, hyperdex_client_returncode* status)
     }
 
     uint64_t sid_num;
-    m_busybee.set_timeout(0);
-    busybee_returncode rc = m_busybee.recv_no_msg(&sid_num);
+    busybee_returncode rc = m_busybee->recv_no_msg(0, &sid_num);
 
     switch (rc)
     {
@@ -677,7 +675,7 @@ client :: loop(int timeout, hyperdex_client_returncode* status)
 int
 client :: poll_fd()
 {
-    return m_busybee.poll_fd();
+    return m_busybee->poll_fd();
 }
 
 void
@@ -697,7 +695,7 @@ int
 client :: block(int timeout)
 {
     pollfd pfd;
-    pfd.fd = m_busybee.poll_fd();
+    pfd.fd = m_busybee->poll_fd();
     pfd.events = POLLIN|POLLHUP;
     pfd.revents = 0;
     return ::poll(&pfd, 1, timeout) >= 0 ? 0 : -1;
@@ -1203,8 +1201,7 @@ client :: send(network_msgtype mt,
     msg->pack_at(BUSYBEE_HEADER_SIZE)
         << type << flags << version << to << nonce;
     server_id id = m_config.get_server_id(to);
-    m_busybee.set_timeout(-1);
-    busybee_returncode rc = m_busybee.send(id.get(), msg);
+    busybee_returncode rc = m_busybee->send(id.get(), msg);
 
     switch (rc)
     {
@@ -1281,7 +1278,8 @@ client :: handle_disruption(const server_id& si)
         }
     }
 
-    m_busybee.drop(si.get());
+    (void)si;
+    m_busybee->reset();
 }
 
 microtransaction* client::uxact_init(const char* space, hyperdex_client_returncode *status)

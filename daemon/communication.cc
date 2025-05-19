@@ -95,8 +95,11 @@ bool
 communication :: setup(const po6::net::location& bind_to,
                        unsigned threads)
 {
-    m_busybee.reset(new busybee_mta(&m_daemon->m_gc, &m_busybee_mapper, bind_to, m_daemon->m_us.get(), threads));
-    m_busybee->set_ignore_signals();
+    (void)threads; // threads parameter unused with new BusyBee
+    m_busybee.reset(busybee_server::create(&m_busybee_mapper,
+                                           m_daemon->m_us.get(),
+                                           bind_to,
+                                           &m_daemon->m_gc));
     return true;
 }
 
@@ -168,8 +171,8 @@ communication :: send_client(const virtual_server_id& from,
                 handle_disruption(to.get());
                 return false;
             case BUSYBEE_SHUTDOWN:
-            case BUSYBEE_POLLFAILED:
-            case BUSYBEE_ADDFDFAIL:
+            case BUSYBEE_SEE_ERRNO:
+            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:
             case BUSYBEE_INTERRUPTED:
@@ -225,8 +228,8 @@ communication :: send(const virtual_server_id& from,
                 handle_disruption(to.get());
                 return false;
             case BUSYBEE_SHUTDOWN:
-            case BUSYBEE_POLLFAILED:
-            case BUSYBEE_ADDFDFAIL:
+            case BUSYBEE_SEE_ERRNO:
+            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:
             case BUSYBEE_INTERRUPTED:
@@ -282,8 +285,8 @@ communication :: send(const virtual_server_id& from,
                 handle_disruption(to.get());
                 return false;
             case BUSYBEE_SHUTDOWN:
-            case BUSYBEE_POLLFAILED:
-            case BUSYBEE_ADDFDFAIL:
+            case BUSYBEE_SEE_ERRNO:
+            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:
             case BUSYBEE_INTERRUPTED:
@@ -333,8 +336,8 @@ communication :: send(const virtual_server_id& vto,
                 handle_disruption(to.get());
                 return false;
             case BUSYBEE_SHUTDOWN:
-            case BUSYBEE_POLLFAILED:
-            case BUSYBEE_ADDFDFAIL:
+            case BUSYBEE_SEE_ERRNO:
+            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:
             case BUSYBEE_INTERRUPTED:
@@ -390,8 +393,8 @@ communication :: send_exact(const virtual_server_id& from,
                 handle_disruption(to.get());
                 return false;
             case BUSYBEE_SHUTDOWN:
-            case BUSYBEE_POLLFAILED:
-            case BUSYBEE_ADDFDFAIL:
+            case BUSYBEE_SEE_ERRNO:
+            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:
             case BUSYBEE_INTERRUPTED:
@@ -422,7 +425,7 @@ communication :: recv(e::garbage_collector::thread_state* ts,
     while (true)
     {
         uint64_t id;
-        busybee_returncode rc = m_busybee->recv(ts, &id, msg);
+        busybee_returncode rc = m_busybee->recv(ts, -1, &id, msg);
 
         switch (rc)
         {
@@ -435,8 +438,8 @@ communication :: recv(e::garbage_collector::thread_state* ts,
                 continue;
             case BUSYBEE_INTERRUPTED:
                 continue;
-            case BUSYBEE_POLLFAILED:
-            case BUSYBEE_ADDFDFAIL:
+            case BUSYBEE_SEE_ERRNO:
+            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:
             default:
@@ -519,4 +522,16 @@ communication :: handle_disruption(uint64_t id)
     {
         m_daemon->m_coord->report_tcp_disconnect(m_daemon->m_config.version(), server_id(id));
     }
+}
+
+void
+communication :: wake_one()
+{
+    std::auto_ptr<e::buffer> msg(e::buffer::create(HYPERDEX_HEADER_SIZE_SV));
+    uint8_t mt = static_cast<uint8_t>(PACKET_NOP);
+    uint8_t flags = 0;
+    msg->pack_at(BUSYBEE_HEADER_SIZE) << mt << flags
+                                     << m_daemon->m_config.version()
+                                     << uint64_t(UINT64_MAX);
+    m_busybee->deliver(m_daemon->m_us.get(), msg);
 }

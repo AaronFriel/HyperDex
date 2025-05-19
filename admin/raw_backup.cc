@@ -34,8 +34,7 @@
 #include <po6/net/hostname.h>
 
 // BusyBee
-#include <busybee_constants.h>
-#include <busybee_single.h>
+#include <busybee.h>
 
 // HyperDex
 #include <hyperdex/admin.h>
@@ -96,9 +95,9 @@ hyperdex_admin_raw_backup(const char* host, uint16_t port,
                 *status = HYPERDEX_ADMIN_INTERRUPTED;
                 return -1;
             case BUSYBEE_SHUTDOWN:
-            case BUSYBEE_POLLFAILED:
+            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_DISRUPTED:
-            case BUSYBEE_ADDFDFAIL:
+            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_EXTERNAL:
                 *status = HYPERDEX_ADMIN_SERVERERROR;
                 return -1;
@@ -117,9 +116,9 @@ hyperdex_admin_raw_backup(const char* host, uint16_t port,
                 *status = HYPERDEX_ADMIN_INTERRUPTED;
                 return -1;
             case BUSYBEE_SHUTDOWN:
-            case BUSYBEE_POLLFAILED:
+            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_DISRUPTED:
-            case BUSYBEE_ADDFDFAIL:
+            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_EXTERNAL:
                 *status = HYPERDEX_ADMIN_SERVERERROR;
                 return -1;
