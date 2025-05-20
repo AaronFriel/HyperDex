@@ -19,18 +19,5 @@ if [ "$THREADS" -gt 8 ]; then
     THREADS=8
 fi
 
-for repo in "po6" "e" "busybee" "HyperLevelDB" "libmacaroons" "libtreadstone" "Replicant"; do
-    git clone https://github.com/AaronFriel/$repo.git || true
-    cd $repo
-    autoreconf -i
-    ./configure
-    make -j$THREADS
-    make install
-    ldconfig
-    cd ..
-done
+make -C "$(dirname "$0")" THREADS="$THREADS" hyperdex
 
-autoreconf -i
-./configure --prefix=/opt/hyperdex
-make;
-make check;
