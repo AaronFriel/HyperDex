@@ -61,7 +61,10 @@ auth_wallet :: get_macaroons(std::vector<macaroon*>* macaroons)
     for (size_t i = 0; i < m_macaroons.size(); ++i)
     {
         macaroon_returncode err;
-        macaroon* M = macaroon_deserialize(m_macaroons[i].c_str(), &err);
+        const unsigned char* data =
+            reinterpret_cast<const unsigned char*>(m_macaroons[i].data());
+        size_t data_sz = m_macaroons[i].size();
+        macaroon* M = macaroon_deserialize(data, data_sz, &err);
 
         if (!M)
         {
