@@ -34,8 +34,7 @@
 #include <po6/net/hostname.h>
 
 // BusyBee
-#include <busybee_constants.h>
-#include <busybee_single.h>
+#include <busybee.h>
 
 // HyperDex
 #include <hyperdex/admin.h>
@@ -83,8 +82,6 @@ hyperdex_admin_raw_backup(const char* host, uint16_t port,
         std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
         e::packer pa = msg->pack_at(BUSYBEE_HEADER_SIZE);
         pa = pa << type << flags << version << to << nonce << name_s;
-        bbs.set_timeout(-1);
-
         switch (bbs.send(msg))
         {
             case BUSYBEE_SUCCESS:
@@ -106,7 +103,7 @@ hyperdex_admin_raw_backup(const char* host, uint16_t port,
                 abort();
         }
 
-        switch (bbs.recv(&msg))
+        switch (bbs.recv(-1, &msg))
         {
             case BUSYBEE_SUCCESS:
                 break;
