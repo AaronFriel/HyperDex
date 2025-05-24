@@ -76,15 +76,15 @@ TEST(IndexEncode, Double)
         double d = drand48() * mrand48() * mrand48();
         uint64_t e = ordered_encode_double(d);
 
-        if (isinf(d) && d < 0)
+        if (std::isinf(d) && d < 0)
         {
             ASSERT_EQ(0x0000000000000000ULL, e);
         }
-        else if (isinf(d) && d > 0)
+        else if (std::isinf(d) && d > 0)
         {
             ASSERT_EQ(0xfff0000000000002ULL, e);
         }
-        else if (isnan(d))
+        else if (std::isnan(d))
         {
             ASSERT_EQ(0xfff0000000000003ULL, e);
         }
