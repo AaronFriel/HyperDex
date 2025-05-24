@@ -71,7 +71,7 @@ libtreadstone_clone:
 	    git clone https://github.com/AaronFriel/libtreadstone.git libtreadstone; \
 	fi
 
-libtreadstone: libtreadstone_clone libmacaroons
+libtreadstone: po6 e libtreadstone_clone
 	cd libtreadstone && autoreconf -i && ./configure && make -j$(THREADS) && make install && ldconfig
 
 Replicant_clone:
