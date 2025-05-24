@@ -34,7 +34,7 @@
 #include <e/endian.h>
 
 // BusyBee
-#include <busybee_constants.h>
+#include <busybee.h>
 
 // HyperDex
 #include <hyperdex/hyperspace_builder.h>
@@ -62,7 +62,7 @@ using hyperdex::admin;
 admin :: admin(const char* coordinator, uint16_t port)
     : m_coord(replicant_client_create(coordinator, port))
     , m_busybee_mapper(&m_config)
-    , m_busybee(&m_busybee_mapper, 0)
+    , m_busybee(busybee_client::create(&m_busybee_mapper))
     , m_config()
     , m_config_id(-1)
     , m_config_status()
@@ -82,7 +82,7 @@ admin :: admin(const char* coordinator, uint16_t port)
     , m_pcs()
     , m_last_error()
 {
-    m_busybee.set_external_fd(replicant_client_poll_fd(m_coord));
+    m_busybee->set_external_fd(replicant_client_poll_fd(m_coord));
 }
 
 admin :: ~admin() throw ()
@@ -771,6 +771,8 @@ admin :: loop(int timeout, hyperdex_admin_returncode* status)
 
         assert(!m_coord_ops.empty() || !m_server_ops.empty() || m_pcs);
 
+        int recv_timeout;
+
         if (m_pcs)
         {
             int t = m_pcs->millis_to_next_send();
@@ -783,22 +785,22 @@ admin :: loop(int timeout, hyperdex_admin_returncode* status)
 
             if (timeout > t)
             {
-                m_busybee.set_timeout(t);
+                recv_timeout = t;
                 timeout -= t;
             }
             else if (timeout < 0)
             {
-                m_busybee.set_timeout(t);
+                recv_timeout = t;
             }
             else
             {
-                m_busybee.set_timeout(timeout);
+                recv_timeout = timeout;
                 timeout = 0;
             }
         }
         else
         {
-            m_busybee.set_timeout(timeout);
+            recv_timeout = timeout;
         }
 
         if (m_handle_coord_ops)
@@ -834,15 +836,14 @@ admin :: loop(int timeout, hyperdex_admin_returncode* status)
 
         uint64_t sid_num;
         std::auto_ptr<e::buffer> msg;
-        busybee_returncode rc = m_busybee.recv(&sid_num, &msg);
+        busybee_returncode rc = m_busybee->recv(recv_timeout, &sid_num, &msg);
         server_id id(sid_num);
 
         switch (rc)
         {
             case BUSYBEE_SUCCESS:
                 break;
-            case BUSYBEE_POLLFAILED:
-            case BUSYBEE_ADDFDFAIL:
+            case BUSYBEE_SEE_ERRNO:
                 ERROR(POLLFAILED) << "poll failed";
                 return -1;
             case BUSYBEE_DISRUPTED:
@@ -1075,9 +1076,7 @@ admin :: send(network_msgtype mt,
     const uint64_t version = m_config.version();
     msg->pack_at(BUSYBEE_HEADER_SIZE)
         << type << flags << version << uint64_t(UINT64_MAX) << nonce;
-    m_busybee.set_timeout(-1);
-
-    switch (m_busybee.send(id.get(), msg))
+    switch (m_busybee->send(id.get(), msg))
     {
         case BUSYBEE_SUCCESS:
             op->handle_sent_to(id);
@@ -1087,8 +1086,7 @@ admin :: send(network_msgtype mt,
             handle_disruption(id);
             ERROR(SERVERERROR) << "server " << id.get() << " had a communication disruption";
             return false;
-        case BUSYBEE_POLLFAILED:
-        case BUSYBEE_ADDFDFAIL:
+        case BUSYBEE_SEE_ERRNO:
             ERROR(POLLFAILED) << "poll failed";
             return false;
         case BUSYBEE_SHUTDOWN:
@@ -1120,7 +1118,7 @@ admin :: handle_disruption(const server_id& si)
         }
     }
 
-    m_busybee.drop(si.get());
+    (void)si;
 }
 
 HYPERDEX_API std::ostream&
