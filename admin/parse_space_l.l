@@ -66,7 +66,6 @@ columns(const char* text, int* column);
 %option reentrant
 %option bison-bridge
 %option bison-locations
-/* no custom yywrap needed */
 
 %%
 
