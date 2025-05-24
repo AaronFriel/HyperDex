@@ -32,8 +32,7 @@
 #include <memory>
 
 // BusyBee
-#include <busybee_constants.h>
-#include <busybee_mta.h>
+#include <busybee.h>
 
 // e
 #include <e/buffer.h>
@@ -72,10 +71,10 @@ class communication
         ~communication() throw ();
 
     public:
-        void pause() { m_busybee->pause(); }
-        void unpause() { m_busybee->unpause(); }
+        void pause() { }
+        void unpause() { }
         void shutdown() { m_busybee->shutdown(); }
-        void wake_one() { m_busybee->wake_one(); }
+        void wake_one() { }
 
     public:
         bool setup(const po6::net::location& bind_to,
@@ -127,7 +126,7 @@ class communication
     private:
         daemon* m_daemon;
         mapper m_busybee_mapper;
-        std::auto_ptr<busybee_mta> m_busybee;
+        std::auto_ptr<busybee_server> m_busybee;
         e::lockfree_fifo<early_message> m_early_messages;
 };
 

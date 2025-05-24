@@ -353,21 +353,28 @@ datalayer :: reconfigure(const configuration&,
         }
     }
 
-    e::ao_hash_map<region_id, uint64_t, id, defaultri> new_versions;
+    std::map<region_id, uint64_t> new_versions;
 
     for (size_t i = 0; i < key_regions.size(); ++i)
     {
         uint64_t val = 0;
 
-        if (!m_versions.get(key_regions[i], &val))
         {
-            val = disk_version(key_regions[i]);
+            std::map<region_id, uint64_t>::const_iterator it = m_versions.find(key_regions[i]);
+            if (it != m_versions.end())
+            {
+                val = it->second;
+            }
+            else
+            {
+                val = disk_version(key_regions[i]);
+            }
         }
 
-        new_versions.put(key_regions[i], val);
+        new_versions[key_regions[i]] = val;
     }
 
-    m_versions.swap(&new_versions);
+    m_versions.swap(new_versions);
     m_indexer->kick();
     m_wiper->kick();
 }
@@ -912,9 +919,16 @@ datalayer :: write_version(const region_id& ri,
 {
     version = roundup_version(version);
     uint64_t* current = NULL;
+    {
+        std::map<region_id, uint64_t>::iterator it = m_versions.find(ri);
+        if (it == m_versions.end())
+        {
+            return false;
+        }
+        current = &it->second;
+    }
 
-    if (!m_versions.mod(ri, &current) ||
-        e::atomic::load_64_nobarrier(current) >= version)
+    if (e::atomic::load_64_nobarrier(current) >= version)
     {
         return false;
     }
@@ -930,7 +944,14 @@ datalayer :: update_memory_version(const region_id& ri, uint64_t version)
 {
     version = roundup_version(version);
     uint64_t* current = NULL;
-    m_versions.mod(ri, &current);
+    {
+        std::map<region_id, uint64_t>::iterator it = m_versions.find(ri);
+        if (it == m_versions.end())
+        {
+            return;
+        }
+        current = &it->second;
+    }
 
     if (current == NULL)
     {
@@ -974,9 +995,16 @@ datalayer :: max_version(const region_id& ri)
 {
     uint64_t val;
 
-    if (!m_versions.get(ri, &val))
     {
-        val = disk_version(ri);
+        std::map<region_id, uint64_t>::const_iterator it = m_versions.find(ri);
+        if (it != m_versions.end())
+        {
+            val = it->second;
+        }
+        else
+        {
+            val = disk_version(ri);
+        }
     }
 
     return val;

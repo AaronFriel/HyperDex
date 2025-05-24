@@ -95,8 +95,11 @@ bool
 communication :: setup(const po6::net::location& bind_to,
                        unsigned threads)
 {
-    m_busybee.reset(new busybee_mta(&m_daemon->m_gc, &m_busybee_mapper, bind_to, m_daemon->m_us.get(), threads));
-    m_busybee->set_ignore_signals();
+    (void)threads; // unused with busybee_server
+    m_busybee.reset(busybee_server::create(&m_busybee_mapper,
+                                           m_daemon->m_us.get(),
+                                           bind_to,
+                                           &m_daemon->m_gc));
     return true;
 }
 
@@ -168,8 +171,6 @@ communication :: send_client(const virtual_server_id& from,
                 handle_disruption(to.get());
                 return false;
             case BUSYBEE_SHUTDOWN:
-            case BUSYBEE_POLLFAILED:
-            case BUSYBEE_ADDFDFAIL:
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:
             case BUSYBEE_INTERRUPTED:
@@ -225,8 +226,7 @@ communication :: send(const virtual_server_id& from,
                 handle_disruption(to.get());
                 return false;
             case BUSYBEE_SHUTDOWN:
-            case BUSYBEE_POLLFAILED:
-            case BUSYBEE_ADDFDFAIL:
+            
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:
             case BUSYBEE_INTERRUPTED:
@@ -282,8 +282,6 @@ communication :: send(const virtual_server_id& from,
                 handle_disruption(to.get());
                 return false;
             case BUSYBEE_SHUTDOWN:
-            case BUSYBEE_POLLFAILED:
-            case BUSYBEE_ADDFDFAIL:
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:
             case BUSYBEE_INTERRUPTED:
@@ -333,8 +331,6 @@ communication :: send(const virtual_server_id& vto,
                 handle_disruption(to.get());
                 return false;
             case BUSYBEE_SHUTDOWN:
-            case BUSYBEE_POLLFAILED:
-            case BUSYBEE_ADDFDFAIL:
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:
             case BUSYBEE_INTERRUPTED:
@@ -390,8 +386,6 @@ communication :: send_exact(const virtual_server_id& from,
                 handle_disruption(to.get());
                 return false;
             case BUSYBEE_SHUTDOWN:
-            case BUSYBEE_POLLFAILED:
-            case BUSYBEE_ADDFDFAIL:
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:
             case BUSYBEE_INTERRUPTED:
@@ -422,7 +416,7 @@ communication :: recv(e::garbage_collector::thread_state* ts,
     while (true)
     {
         uint64_t id;
-        busybee_returncode rc = m_busybee->recv(ts, &id, msg);
+        busybee_returncode rc = m_busybee->recv(ts, -1, &id, msg);
 
         switch (rc)
         {
@@ -435,8 +429,6 @@ communication :: recv(e::garbage_collector::thread_state* ts,
                 continue;
             case BUSYBEE_INTERRUPTED:
                 continue;
-            case BUSYBEE_POLLFAILED:
-            case BUSYBEE_ADDFDFAIL:
             case BUSYBEE_TIMEOUT:
             case BUSYBEE_EXTERNAL:
             default:

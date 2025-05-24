@@ -29,7 +29,7 @@
 #define hyperdex_common_mapper_h_
 
 // BusyBee
-#include <busybee_mapper.h>
+#include <busybee.h>
 
 // HyperDex
 #include "namespace.h"
@@ -37,7 +37,7 @@
 
 BEGIN_HYPERDEX_NAMESPACE
 
-class mapper : public ::busybee_mapper
+class mapper : public ::busybee_controller
 {
     public:
         mapper(const configuration* config);

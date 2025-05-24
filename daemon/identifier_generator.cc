@@ -53,10 +53,13 @@ bool
 identifier_generator :: bump(const region_id& ri, uint64_t id)
 {
     uint64_t* val = NULL;
-
-    if (!m_generators.mod(ri, &val))
     {
-        return false;
+        generator_map_t::iterator it = m_generators.find(ri);
+        if (it == m_generators.end())
+        {
+            return false;
+        }
+        val = &it->second;
     }
 
     uint64_t count = load_64_nobarrier(val);
@@ -75,9 +78,13 @@ identifier_generator :: peek(const region_id& ri) const
     e::atomic::memory_barrier();
     uint64_t val = 0;
 
-    if (!m_generators.get(ri, &val))
     {
-        abort();
+        generator_map_t::const_iterator it = m_generators.find(ri);
+        if (it == m_generators.end())
+        {
+            abort();
+        }
+        val = it->second;
     }
 
     return val;
@@ -87,10 +94,13 @@ uint64_t
 identifier_generator :: generate_id(const region_id& ri)
 {
     uint64_t* val = NULL;
-
-    if (!m_generators.mod(ri, &val))
     {
-        abort();
+        generator_map_t::iterator it = m_generators.find(ri);
+        if (it == m_generators.end())
+        {
+            abort();
+        }
+        val = &it->second;
     }
 
     return e::atomic::increment_64_nobarrier(val, 1) - 1;
@@ -105,19 +115,26 @@ identifier_generator :: adopt(region_id* ris, size_t ris_sz)
     {
         uint64_t count = 0;
 
-        if (!m_generators.get(ris[i], &count))
         {
-            count = 1;
+            generator_map_t::const_iterator it = m_generators.find(ris[i]);
+            if (it != m_generators.end())
+            {
+                count = it->second;
+            }
+            else
+            {
+                count = 1;
+            }
         }
 
-        new_generators.put(ris[i], count);
+        new_generators[ris[i]] = count;
     }
 
-    m_generators.swap(&new_generators);
+    m_generators.swap(new_generators);
 }
 
 void
 identifier_generator :: copy_from(const identifier_generator& ig)
 {
-    m_generators.copy_from(ig.m_generators);
+    m_generators = ig.m_generators;
 }

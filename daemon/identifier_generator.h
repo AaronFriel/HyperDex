@@ -28,8 +28,8 @@
 #ifndef hyperdex_daemon_identifier_generator_h_
 #define hyperdex_daemon_identifier_generator_h_
 
-// e
-#include <e/ao_hash_map.h>
+// STL
+#include <map>
 
 // HyperDex
 #include "namespace.h"
@@ -67,7 +67,7 @@ class identifier_generator
 
     private:
         const static region_id defaultri;
-        typedef e::ao_hash_map<region_id, uint64_t, hashid, defaultri> generator_map_t;
+        typedef std::map<region_id, uint64_t> generator_map_t;
         generator_map_t m_generators;
 };
 

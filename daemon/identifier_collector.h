@@ -28,8 +28,8 @@
 #ifndef hyperdex_daemon_identifier_collector_h_
 #define hyperdex_daemon_identifier_collector_h_
 
-// e
-#include <e/ao_hash_map.h>
+// STL
+#include <map>
 #include <e/compat.h>
 #include <e/seqno_collector.h>
 
@@ -67,7 +67,7 @@ class identifier_collector
 
     private:
         const static region_id defaultri;
-        typedef e::ao_hash_map<region_id, e::compat::shared_ptr<e::seqno_collector>, id, defaultri> collector_map_t;
+        typedef std::map<region_id, e::compat::shared_ptr<e::seqno_collector> > collector_map_t;
         e::garbage_collector* m_gc;
         collector_map_t m_collectors;
 };
