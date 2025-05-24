@@ -1,0 +1,9 @@
+*
+!.gitignore
+!*/
+!*/.agent/
+!*/.agent/**
+
+!*/.github/
+!*/.github/workflows/
+!*/.github/workflows/**
