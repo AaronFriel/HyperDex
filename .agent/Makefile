@@ -15,43 +15,71 @@ clones: po6_clone e_clone busybee_clone HyperLevelDB_clone \
 	    libmacaroons_clone libtreadstone_clone Replicant_clone
 
 po6_clone:
-	git clone https://github.com/AaronFriel/po6.git po6 || true
+	@if [ -d po6/.git ]; then \
+	    echo "Using existing clone in po6"; \
+	else \
+	    git clone https://github.com/AaronFriel/po6.git po6; \
+	fi
 
 po6: po6_clone
 	cd po6 && autoreconf -i && ./configure && make -j$(THREADS) && make install && ldconfig
 
 e_clone:
-	git clone https://github.com/AaronFriel/e.git e || true
+	@if [ -d e/.git ]; then \
+	    echo "Using existing clone in e"; \
+	else \
+	    git clone https://github.com/AaronFriel/e.git e; \
+	fi
 
 e: po6 e_clone
 	cd e && autoreconf -i && ./configure && make -j$(THREADS) && make install && ldconfig
 
 busybee_clone:
-	git clone https://github.com/AaronFriel/busybee.git busybee || true
+	@if [ -d busybee/.git ]; then \
+	    echo "Using existing clone in busybee"; \
+	else \
+	    git clone https://github.com/AaronFriel/busybee.git busybee; \
+	fi
 
 busybee: e busybee_clone
 	cd busybee && autoreconf -i && ./configure && make -j$(THREADS) && make install && ldconfig
 
 HyperLevelDB_clone:
-	git clone https://github.com/AaronFriel/HyperLevelDB.git HyperLevelDB || true
+	@if [ -d HyperLevelDB/.git ]; then \
+	    echo "Using existing clone in HyperLevelDB"; \
+	else \
+	    git clone https://github.com/AaronFriel/HyperLevelDB.git HyperLevelDB; \
+	fi
 
 HyperLevelDB: HyperLevelDB_clone
 	cd HyperLevelDB && autoreconf -i && ./configure && make -j$(THREADS) && make install && ldconfig
 
 libmacaroons_clone:
-	git clone https://github.com/AaronFriel/libmacaroons.git libmacaroons || true
+	@if [ -d libmacaroons/.git ]; then \
+	    echo "Using existing clone in libmacaroons"; \
+	else \
+	    git clone https://github.com/AaronFriel/libmacaroons.git libmacaroons; \
+	fi
 
 libmacaroons: libmacaroons_clone
 	cd libmacaroons && autoreconf -i && ./configure && make -j$(THREADS) && make install && ldconfig
 
 libtreadstone_clone:
-	git clone https://github.com/AaronFriel/libtreadstone.git libtreadstone || true
+	@if [ -d libtreadstone/.git ]; then \
+	    echo "Using existing clone in libtreadstone"; \
+	else \
+	    git clone https://github.com/AaronFriel/libtreadstone.git libtreadstone; \
+	fi
 
 libtreadstone: libtreadstone_clone libmacaroons
 	cd libtreadstone && autoreconf -i && ./configure && make -j$(THREADS) && make install && ldconfig
 
 Replicant_clone:
-	git clone https://github.com/AaronFriel/Replicant.git Replicant || true
+	@if [ -d Replicant/.git ]; then \
+	    echo "Using existing clone in Replicant"; \
+	else \
+	    git clone https://github.com/AaronFriel/Replicant.git Replicant; \
+	fi
 
 Replicant: busybee Replicant_clone
 	cd Replicant && autoreconf -i && ./configure && make -j$(THREADS) && make install && ldconfig
