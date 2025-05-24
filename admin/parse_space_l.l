@@ -66,8 +66,7 @@ columns(const char* text, int* column);
 %option reentrant
 %option bison-bridge
 %option bison-locations
-// Define yywrap to silence warning in reconfigure
-int yywrap(void) { return 1; }
+/* no custom yywrap needed */
 
 %%
 

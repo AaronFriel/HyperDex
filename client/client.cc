@@ -60,6 +60,9 @@
 #include "client/pending_search_describe.h"
 #include "client/pending_sorted_search.h"
 
+#define BUSYBEE_POLLFAILED BUSYBEE_SEE_ERRNO
+#define BUSYBEE_ADDFDFAIL  BUSYBEE_SEE_ERRNO
+
 #define ERROR(CODE) \
     *status = HYPERDEX_CLIENT_ ## CODE; \
     m_last_error.set_loc(__FILE__, __LINE__); \
@@ -83,7 +86,7 @@ using hyperdex::microtransaction;
 client :: client(const char* coordinator, uint16_t port)
     : m_coord(replicant_client_create(coordinator, port))
     , m_busybee_mapper(&m_config)
-    , m_busybee(&m_busybee_mapper, 0)
+    , m_busybee(busybee_client::create(&m_busybee_mapper))
     , m_config()
     , m_config_id(-1)
     , m_config_status()
@@ -108,14 +111,14 @@ client :: client(const char* coordinator, uint16_t port)
         throw std::bad_alloc();
     }
 
-    m_busybee.set_external_fd(replicant_client_poll_fd(m_coord));
-    m_busybee.set_external_fd(m_flagfd.poll_fd());
+    m_busybee->set_external_fd(replicant_client_poll_fd(m_coord));
+    m_busybee->set_external_fd(m_flagfd.poll_fd());
 }
 
 client :: client(const char* conn_str)
     : m_coord(replicant_client_create_conn_str(conn_str))
     , m_busybee_mapper(&m_config)
-    , m_busybee(&m_busybee_mapper, 0)
+    , m_busybee(busybee_client::create(&m_busybee_mapper))
     , m_config()
     , m_config_id(-1)
     , m_config_status()
@@ -140,8 +143,8 @@ client :: client(const char* conn_str)
         throw std::bad_alloc();
     }
 
-    m_busybee.set_external_fd(replicant_client_poll_fd(m_coord));
-    m_busybee.set_external_fd(m_flagfd.poll_fd());
+    m_busybee->set_external_fd(replicant_client_poll_fd(m_coord));
+    m_busybee->set_external_fd(m_flagfd.poll_fd());
 }
 
 client :: ~client() throw ()
@@ -554,8 +557,7 @@ client :: loop(int timeout, hyperdex_client_returncode* status)
 
         uint64_t sid_num;
         std::auto_ptr<e::buffer> msg;
-        m_busybee.set_timeout(timeout);
-        busybee_returncode rc = m_busybee.recv(&sid_num, &msg);
+        busybee_returncode rc = m_busybee->recv(timeout, &sid_num, &msg);
         server_id id(sid_num);
 
         switch (rc)
@@ -573,9 +575,8 @@ client :: loop(int timeout, hyperdex_client_returncode* status)
                 continue;
             case BUSYBEE_EXTERNAL:
                 continue;
-            BUSYBEE_ERROR_CASE(POLLFAILED);
-            BUSYBEE_ERROR_CASE(ADDFDFAIL);
             BUSYBEE_ERROR_CASE(SHUTDOWN);
+            BUSYBEE_ERROR_CASE(SEE_ERRNO);
             default:
                 ERROR(INTERNAL) << "internal error: BusyBee unexpectedly returned "
                                 << (unsigned) rc << ": please file a bug";
@@ -640,8 +641,7 @@ client :: loop(int timeout, hyperdex_client_returncode* status)
     }
 
     uint64_t sid_num;
-    m_busybee.set_timeout(0);
-    busybee_returncode rc = m_busybee.recv_no_msg(&sid_num);
+    busybee_returncode rc = m_busybee->recv_no_msg(0, &sid_num);
 
     switch (rc)
     {
@@ -660,9 +660,8 @@ client :: loop(int timeout, hyperdex_client_returncode* status)
                 return -1;
             }
             break;
-        BUSYBEE_ERROR_CASE(POLLFAILED);
-        BUSYBEE_ERROR_CASE(ADDFDFAIL);
         BUSYBEE_ERROR_CASE(SHUTDOWN);
+        BUSYBEE_ERROR_CASE(SEE_ERRNO);
         default:
             ERROR(INTERNAL) << "internal error: BusyBee unexpectedly returned "
                             << (unsigned) rc << ": please file a bug";
@@ -676,7 +675,7 @@ client :: loop(int timeout, hyperdex_client_returncode* status)
 int
 client :: poll_fd()
 {
-    return m_busybee.poll_fd();
+    return m_busybee->poll_fd();
 }
 
 void
@@ -696,7 +695,7 @@ int
 client :: block(int timeout)
 {
     pollfd pfd;
-    pfd.fd = m_busybee.poll_fd();
+    pfd.fd = m_busybee->poll_fd();
     pfd.events = POLLIN|POLLHUP;
     pfd.revents = 0;
     return ::poll(&pfd, 1, timeout) >= 0 ? 0 : -1;
@@ -1202,8 +1201,7 @@ client :: send(network_msgtype mt,
     msg->pack_at(BUSYBEE_HEADER_SIZE)
         << type << flags << version << to << nonce;
     server_id id = m_config.get_server_id(to);
-    m_busybee.set_timeout(-1);
-    busybee_returncode rc = m_busybee.send(id.get(), msg);
+    busybee_returncode rc = m_busybee->send(id.get(), msg);
 
     switch (rc)
     {
@@ -1216,8 +1214,7 @@ client :: send(network_msgtype mt,
             ERROR(SERVERERROR) << "server " << id.get() << " had a communication disruption";
             return false;
         BUSYBEE_ERROR_CASE_FALSE(SHUTDOWN);
-        BUSYBEE_ERROR_CASE_FALSE(POLLFAILED);
-        BUSYBEE_ERROR_CASE_FALSE(ADDFDFAIL);
+        BUSYBEE_ERROR_CASE_FALSE(SEE_ERRNO);
         BUSYBEE_ERROR_CASE_FALSE(TIMEOUT);
         BUSYBEE_ERROR_CASE_FALSE(EXTERNAL);
         BUSYBEE_ERROR_CASE_FALSE(INTERRUPTED);
@@ -1280,7 +1277,7 @@ client :: handle_disruption(const server_id& si)
         }
     }
 
-    m_busybee.drop(si.get());
+    (void)si;
 }
 
 microtransaction* client::uxact_init(const char* space, hyperdex_client_returncode *status)
