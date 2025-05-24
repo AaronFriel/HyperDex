@@ -34,8 +34,7 @@
 #include <po6/net/hostname.h>
 
 // BusyBee
-#include <busybee_constants.h>
-#include <busybee_single.h>
+#include <busybee.h>
 
 // HyperDex
 #include <hyperdex/admin.h>
@@ -65,7 +64,7 @@ hyperdex_admin_raw_backup(const char* host, uint16_t port,
             return -1;
         }
 
-        busybee_single bbs(loc);
+        std::auto_ptr<busybee_single> bbs(busybee_single::create(loc));
         const uint8_t type = static_cast<uint8_t>(BACKUP);
         const uint8_t flags = 0;
         const uint64_t version = 0;
@@ -83,9 +82,7 @@ hyperdex_admin_raw_backup(const char* host, uint16_t port,
         std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
         e::packer pa = msg->pack_at(BUSYBEE_HEADER_SIZE);
         pa = pa << type << flags << version << to << nonce << name_s;
-        bbs.set_timeout(-1);
-
-        switch (bbs.send(msg))
+        switch (bbs->send(msg))
         {
             case BUSYBEE_SUCCESS:
                 break;
@@ -96,9 +93,8 @@ hyperdex_admin_raw_backup(const char* host, uint16_t port,
                 *status = HYPERDEX_ADMIN_INTERRUPTED;
                 return -1;
             case BUSYBEE_SHUTDOWN:
-            case BUSYBEE_POLLFAILED:
+            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_DISRUPTED:
-            case BUSYBEE_ADDFDFAIL:
             case BUSYBEE_EXTERNAL:
                 *status = HYPERDEX_ADMIN_SERVERERROR;
                 return -1;
@@ -106,7 +102,7 @@ hyperdex_admin_raw_backup(const char* host, uint16_t port,
                 abort();
         }
 
-        switch (bbs.recv(&msg))
+        switch (bbs->recv(-1, &msg))
         {
             case BUSYBEE_SUCCESS:
                 break;
@@ -117,9 +113,8 @@ hyperdex_admin_raw_backup(const char* host, uint16_t port,
                 *status = HYPERDEX_ADMIN_INTERRUPTED;
                 return -1;
             case BUSYBEE_SHUTDOWN:
-            case BUSYBEE_POLLFAILED:
+            case BUSYBEE_SEE_ERRNO:
             case BUSYBEE_DISRUPTED:
-            case BUSYBEE_ADDFDFAIL:
             case BUSYBEE_EXTERNAL:
                 *status = HYPERDEX_ADMIN_SERVERERROR;
                 return -1;

@@ -29,7 +29,7 @@
 #define hyperdex_admin_constants_h_
 
 // BusyBee
-#include <busybee_constants.h>
+#include <busybee.h>
 
 #define HYPERDEX_ADMIN_HEADER_SIZE_REQ (BUSYBEE_HEADER_SIZE \
                                         + sizeof(uint8_t) /*mt*/ \
