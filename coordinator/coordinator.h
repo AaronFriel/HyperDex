@@ -224,8 +224,8 @@ class coordinator
         uint64_t m_checkpoint_gc_through;
         server_barrier m_checkpoint_stable_barrier;
         // cached config
-        std::auto_ptr<e::buffer> m_latest_config;
-        std::auto_ptr<e::buffer> m_response;
+        std::unique_ptr<e::buffer> m_latest_config;
+        std::unique_ptr<e::buffer> m_response;
 
     private:
         coordinator(const coordinator&);

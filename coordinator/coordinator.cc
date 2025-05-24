@@ -1897,7 +1897,7 @@ coordinator :: generate_cached_configuration(rsm_context*)
     std::vector<transfer> transfers_subset;
     prioritized_transfer_subset(&transfers_subset);
 
-    std::auto_ptr<e::buffer> new_config(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> new_config(e::buffer::create(sz));
     e::packer pa = new_config->pack_at(0);
     pa = pa << m_cluster << m_version << m_flags
             << uint64_t(m_servers.size())
@@ -1920,7 +1920,7 @@ coordinator :: generate_cached_configuration(rsm_context*)
         pa = pa << transfers_subset[i];
     }
 
-    m_latest_config = new_config;
+    m_latest_config = std::move(new_config);
 }
 
 struct coordinator::transfer_sorter
