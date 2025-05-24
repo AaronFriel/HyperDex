@@ -47,7 +47,7 @@
 #include <po6/threads/thread.h>
 
 // e
-#include <e/ao_hash_map.h>
+#include <map>
 
 // HyperDex
 #include "namespace.h"
@@ -210,7 +210,7 @@ class datalayer
         daemon* m_daemon;
         leveldb_db_ptr m_db;
         std::vector<index_state> m_indices;
-        e::ao_hash_map<region_id, uint64_t, id, defaultri> m_versions;
+        std::map<region_id, uint64_t> m_versions;
         const std::auto_ptr<checkpointer_thread> m_checkpointer;
         const std::auto_ptr<wiper_indexer_mediator> m_mediator;
         const std::auto_ptr<indexer_thread> m_indexer;

@@ -54,9 +54,13 @@ identifier_collector :: bump(const region_id& ri, uint64_t lb)
 {
     e::compat::shared_ptr<e::seqno_collector> sc;
 
-    if (!m_collectors.get(ri, &sc))
     {
-        abort();
+        collector_map_t::iterator it = m_collectors.find(ri);
+        if (it == m_collectors.end())
+        {
+            abort();
+        }
+        sc = it->second;
     }
 
     sc->collect_up_to(lb);
@@ -67,9 +71,13 @@ identifier_collector :: collect(const region_id& ri, uint64_t seqno)
 {
     e::compat::shared_ptr<e::seqno_collector> sc;
 
-    if (!m_collectors.get(ri, &sc))
     {
-        abort();
+        collector_map_t::iterator it = m_collectors.find(ri);
+        if (it == m_collectors.end())
+        {
+            abort();
+        }
+        sc = it->second;
     }
 
     sc->collect(seqno);
@@ -80,9 +88,13 @@ identifier_collector :: lower_bound(const region_id& ri)
 {
     e::compat::shared_ptr<e::seqno_collector> sc;
 
-    if (!m_collectors.get(ri, &sc))
     {
-        abort();
+        collector_map_t::iterator it = m_collectors.find(ri);
+        if (it == m_collectors.end())
+        {
+            abort();
+        }
+        sc = it->second;
     }
 
     uint64_t lb;
@@ -99,15 +111,22 @@ identifier_collector :: adopt(region_id* ris, size_t ris_sz)
     {
         e::compat::shared_ptr<e::seqno_collector> sc;
 
-        if (!m_collectors.get(ris[i], &sc))
         {
-            sc = e::compat::shared_ptr<e::seqno_collector>(new e::seqno_collector(m_gc));
-            sc->collect(0);
+            collector_map_t::iterator it = m_collectors.find(ris[i]);
+            if (it == m_collectors.end())
+            {
+                sc = e::compat::shared_ptr<e::seqno_collector>(new e::seqno_collector(m_gc));
+                sc->collect(0);
+            }
+            else
+            {
+                sc = it->second;
+            }
         }
 
         assert(sc);
-        new_collectors.put(ris[i], sc);
+        new_collectors[ris[i]] = sc;
     }
 
-    m_collectors.swap(&new_collectors);
+    m_collectors.swap(new_collectors);
 }
