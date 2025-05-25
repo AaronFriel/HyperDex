@@ -22,8 +22,4 @@ if [ $status -eq 0 ]; then
     > "$setup_deps_output"
 fi
 
-if [ "${CODEX_AGENT:-0}" = "1" ]; then
-    exit $status
-else
-    exit 0
-fi
+exit $status
