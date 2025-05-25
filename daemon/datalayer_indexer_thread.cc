@@ -158,7 +158,7 @@ datalayer :: indexer_thread :: do_work()
     g2.use_variable();
 
     // Now iterate over the data once.
-    std::auto_ptr<region_iterator> it(play(m_current_region, sc));
+    std::unique_ptr<region_iterator> it(play(m_current_region, sc));
 
     if (!it.get())
     {
@@ -176,7 +176,7 @@ datalayer :: indexer_thread :: do_work()
     }
 
     // Now do it again from the checkpoint we took.
-    std::auto_ptr<replay_iterator> rit(replay(m_current_region, timestamp));
+    std::unique_ptr<replay_iterator> rit(replay(m_current_region, timestamp));
 
     if (!rit.get())
     {
@@ -333,7 +333,7 @@ datalayer :: indexer_thread :: wipe(const region_id& ri, const index_id& ii)
 bool
 datalayer :: indexer_thread :: wipe_common(uint8_t c, const region_id& ri, const index_id& ii)
 {
-    std::auto_ptr<leveldb::Iterator> it;
+    std::unique_ptr<leveldb::Iterator> it;
     it.reset(m_daemon->m_data.m_db->NewIterator(leveldb::ReadOptions()));
     char backing[sizeof(uint8_t) + 2 * VARINT_64_MAX_SIZE];
     char* ptr = backing;

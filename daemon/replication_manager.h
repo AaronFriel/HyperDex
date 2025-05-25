@@ -87,8 +87,8 @@ class replication_manager
         void client_atomic(const server_id& from,
                            const virtual_server_id& to,
                            uint64_t nonce,
-                           std::auto_ptr<key_change> kc,
-                           std::auto_ptr<e::buffer> backing);
+                           std::unique_ptr<key_change> kc,
+                           std::unique_ptr<e::buffer> backing);
         // These are called in response to messages from other hosts.
         void chain_op(const virtual_server_id& from,
                       const virtual_server_id& to,
@@ -98,14 +98,14 @@ class replication_manager
                       bool has_value,
                       const e::slice& key,
                       const std::vector<e::slice>& value,
-                      std::auto_ptr<e::buffer> backing);
+                      std::unique_ptr<e::buffer> backing);
         void chain_subspace(const virtual_server_id& from,
                             const virtual_server_id& to,
                             uint64_t old_version,
                             uint64_t new_version,
                             const e::slice& key,
                             const std::vector<e::slice>& value,
-                            std::auto_ptr<e::buffer> backing,
+                            std::unique_ptr<e::buffer> backing,
                             const region_id& prev_region,
                             const region_id& this_old_region,
                             const region_id& this_new_region,
@@ -166,7 +166,7 @@ class replication_manager
         identifier_generator m_idgen;
         identifier_collector m_idcol;
         identifier_generator m_stable;
-        const std::auto_ptr<retransmitter_thread> m_retransmitter;
+        const std::unique_ptr<retransmitter_thread> m_retransmitter;
         po6::threads::mutex m_protect_stable_stuff;
         uint64_t m_checkpoint;
         uint32_t m_need_check;

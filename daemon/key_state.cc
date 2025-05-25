@@ -53,13 +53,13 @@ struct key_state::deferred_key_change
 {
     deferred_key_change(const server_id& _from,
                         uint64_t _nonce, uint64_t _version,
-                        std::auto_ptr<key_change> _kc,
-                        std::auto_ptr<e::buffer> _backing)
+                        std::unique_ptr<key_change> _kc,
+                        std::unique_ptr<e::buffer> _backing)
         : from(_from)
         , nonce(_nonce)
         , version(_version)
-        , kc(_kc)
-        , backing(_backing)
+        , kc(std::move(_kc))
+        , backing(std::move(_backing))
         , m_ref(0)
     {
     }
@@ -70,8 +70,8 @@ struct key_state::deferred_key_change
     const server_id from;
     const uint64_t nonce;
     const uint64_t version;
-    const std::auto_ptr<key_change> kc;
-    const std::auto_ptr<e::buffer> backing;
+    const std::unique_ptr<key_change> kc;
+    const std::unique_ptr<e::buffer> backing;
 
     private:
         size_t m_ref;
@@ -220,15 +220,15 @@ struct key_state::stub_client_atomic
 {
     stub_client_atomic(const server_id& f,
                        uint64_t n,
-                       std::auto_ptr<key_change> k,
-                       std::auto_ptr<e::buffer> b)
-        : from(f), nonce(n), kc(k), backing(b) {}
+                       std::unique_ptr<key_change> k,
+                       std::unique_ptr<e::buffer> b)
+        : from(f), nonce(n), kc(std::move(k)), backing(std::move(b)) {}
     ~stub_client_atomic() throw () {}
 
     server_id from;
     uint64_t nonce;
-    std::auto_ptr<key_change> kc;
-    std::auto_ptr<e::buffer> backing;
+    std::unique_ptr<key_change> kc;
+    std::unique_ptr<e::buffer> backing;
 };
 
 void
@@ -237,19 +237,19 @@ key_state :: enqueue_client_atomic(replication_manager* rm,
                                    const schema& sc,
                                    const server_id& from,
                                    uint64_t nonce,
-                                   std::auto_ptr<key_change> kc,
-                                   std::auto_ptr<e::buffer> backing)
+                                   std::unique_ptr<key_change> kc,
+                                   std::unique_ptr<e::buffer> backing)
 {
     bool have_it = possibly_takeover_state_machine();
 
     if (have_it)
     {
-        do_client_atomic(rm, us, sc, from, nonce, kc, backing);
+        do_client_atomic(rm, us, sc, from, nonce, std::move(kc), std::move(backing));
         work_state_machine_with_work_bit(rm, us, sc);
     }
     else
     {
-        m_client_atomics.push(new stub_client_atomic(from, nonce, kc, backing));
+        m_client_atomics.push(new stub_client_atomic(from, nonce, std::move(kc), std::move(backing)));
         someone_needs_to_work_the_state_machine();
         work_state_machine_or_pass_the_buck(rm, us, sc);
     }
@@ -263,14 +263,14 @@ struct key_state::stub_chain_op
                   bool _fresh,
                   bool _has_value,
                   const std::vector<e::slice>& _value,
-                  std::auto_ptr<e::buffer> _backing)
+                  std::unique_ptr<e::buffer> _backing)
         : from(_from)
         , old_version(_old_version)
         , new_version(_new_version)
         , fresh(_fresh)
         , has_value(_has_value)
         , value(_value)
-        , backing(_backing)
+        , backing(std::move(_backing))
     {
     }
     ~stub_chain_op() throw () {}
@@ -281,7 +281,7 @@ struct key_state::stub_chain_op
     bool fresh;
     bool has_value;
     std::vector<e::slice> value;
-    std::auto_ptr<e::buffer> backing;
+    std::unique_ptr<e::buffer> backing;
 };
 
 void
@@ -294,18 +294,18 @@ key_state :: enqueue_chain_op(replication_manager* rm,
                               bool fresh,
                               bool has_value,
                               const std::vector<e::slice>& value,
-                              std::auto_ptr<e::buffer> backing)
+                              std::unique_ptr<e::buffer> backing)
 {
     bool have_it = possibly_takeover_state_machine();
 
     if (have_it)
     {
-        do_chain_op(rm, us, sc, from, old_version, new_version, fresh, has_value, value, backing);
+        do_chain_op(rm, us, sc, from, old_version, new_version, fresh, has_value, value, std::move(backing));
         work_state_machine_with_work_bit(rm, us, sc);
     }
     else
     {
-        m_chain_ops.push(new stub_chain_op(from, old_version, new_version, fresh, has_value, value, backing));
+        m_chain_ops.push(new stub_chain_op(from, old_version, new_version, fresh, has_value, value, std::move(backing)));
         someone_needs_to_work_the_state_machine();
         work_state_machine_or_pass_the_buck(rm, us, sc);
     }
@@ -317,7 +317,7 @@ struct key_state::stub_chain_subspace
                         uint64_t _old_version,
                         uint64_t _new_version,
                         const std::vector<e::slice>& _value,
-                        std::auto_ptr<e::buffer> _backing,
+                        std::unique_ptr<e::buffer> _backing,
                         const region_id& _prev_region,
                         const region_id& _this_old_region,
                         const region_id& _this_new_region,
@@ -326,7 +326,7 @@ struct key_state::stub_chain_subspace
         , old_version(_old_version)
         , new_version(_new_version)
         , value(_value)
-        , backing(_backing)
+        , backing(std::move(_backing))
         , prev_region(_prev_region)
         , this_old_region(_this_old_region)
         , this_new_region(_this_new_region)
@@ -339,7 +339,7 @@ struct key_state::stub_chain_subspace
     uint64_t old_version;
     uint64_t new_version;
     std::vector<e::slice> value;
-    std::auto_ptr<e::buffer> backing;
+    std::unique_ptr<e::buffer> backing;
     region_id prev_region;
     region_id this_old_region;
     region_id this_new_region;
@@ -354,7 +354,7 @@ key_state :: enqueue_chain_subspace(replication_manager* rm,
                                     uint64_t old_version,
                                     uint64_t new_version,
                                     const std::vector<e::slice>& value,
-                                    std::auto_ptr<e::buffer> backing,
+                                    std::unique_ptr<e::buffer> backing,
                                     const region_id& prev_region,
                                     const region_id& this_old_region,
                                     const region_id& this_new_region,
@@ -364,12 +364,12 @@ key_state :: enqueue_chain_subspace(replication_manager* rm,
 
     if (have_it)
     {
-        do_chain_subspace(rm, us, sc, from, old_version, new_version, value, backing, prev_region, this_old_region, this_new_region, next_region);
+        do_chain_subspace(rm, us, sc, from, old_version, new_version, value, std::move(backing), prev_region, this_old_region, this_new_region, next_region);
         work_state_machine_with_work_bit(rm, us, sc);
     }
     else
     {
-        m_chain_subspaces.push(new stub_chain_subspace(from, old_version, new_version, value, backing, prev_region, this_old_region, this_new_region, next_region));
+        m_chain_subspaces.push(new stub_chain_subspace(from, old_version, new_version, value, std::move(backing), prev_region, this_old_region, this_new_region, next_region));
         someone_needs_to_work_the_state_machine();
         work_state_machine_or_pass_the_buck(rm, us, sc);
     }
@@ -766,19 +766,19 @@ key_state :: work_state_machine_with_work_bit(replication_manager* rm,
 
         while (m_client_atomics.pop(gc, &sca))
         {
-            do_client_atomic(rm, us, sc, sca->from, sca->nonce, sca->kc, sca->backing);
+            do_client_atomic(rm, us, sc, sca->from, sca->nonce, std::move(sca->kc), std::move(sca->backing));
             delete sca;
         }
 
         while (m_chain_ops.pop(gc, &sco))
         {
-            do_chain_op(rm, us, sc, sco->from, sco->old_version, sco->new_version, sco->fresh, sco->has_value, sco->value, sco->backing);
+            do_chain_op(rm, us, sc, sco->from, sco->old_version, sco->new_version, sco->fresh, sco->has_value, sco->value, std::move(sco->backing));
             delete sco;
         }
 
         while (m_chain_subspaces.pop(gc, &scs))
         {
-            do_chain_subspace(rm, us, sc, scs->from, scs->old_version, scs->new_version, scs->value, scs->backing,
+            do_chain_subspace(rm, us, sc, scs->from, scs->old_version, scs->new_version, scs->value, std::move(scs->backing),
                               scs->prev_region, scs->this_old_region, scs->this_new_region, scs->next_region);
             delete scs;
         }
@@ -859,8 +859,8 @@ key_state :: do_client_atomic(replication_manager* rm,
                               const schema&,
                               const server_id& from,
                               uint64_t nonce,
-                              std::auto_ptr<key_change> kc,
-                              std::auto_ptr<e::buffer> backing)
+                              std::unique_ptr<key_change> kc,
+                              std::unique_ptr<e::buffer> backing)
 {
     uint64_t version = rm->m_idgen.generate_id(m_ri);
 
@@ -870,7 +870,7 @@ key_state :: do_client_atomic(replication_manager* rm,
     }
 
     e::intrusive_ptr<deferred_key_change> dkc;
-    dkc = new deferred_key_change(from, nonce, version, kc, backing);
+    dkc = new deferred_key_change(from, nonce, version, std::move(kc), std::move(backing));
     m_changes.push_back(dkc);
 }
 
@@ -884,16 +884,16 @@ key_state :: do_chain_op(replication_manager* rm,
                          bool fresh,
                          bool has_value,
                          const std::vector<e::slice>& value,
-                         std::auto_ptr<e::buffer> backing)
+                         std::unique_ptr<e::buffer> backing)
 {
     e::intrusive_ptr<key_operation> op = get(new_version);
-    std::auto_ptr<e::arena> memory(new e::arena());
+    std::unique_ptr<e::arena> memory(new e::arena());
     memory->takeover(backing.release());
 
     if (!op)
     {
         op = enqueue_continuous_key_op(old_version, new_version, fresh,
-                                       has_value, value, memory);
+                                       has_value, value, std::move(memory));
     }
 
     assert(op);
@@ -913,20 +913,20 @@ key_state :: do_chain_subspace(replication_manager* rm,
                                uint64_t old_version,
                                uint64_t new_version,
                                const std::vector<e::slice>& value,
-                               std::auto_ptr<e::buffer> backing,
+                               std::unique_ptr<e::buffer> backing,
                                const region_id& prev_region,
                                const region_id& this_old_region,
                                const region_id& this_new_region,
                                const region_id& next_region)
 {
     e::intrusive_ptr<key_operation> op = get(new_version);
-    std::auto_ptr<e::arena> memory(new e::arena());
+    std::unique_ptr<e::arena> memory(new e::arena());
     memory->takeover(backing.release());
 
     if (!op)
     {
         op = enqueue_discontinuous_key_op(old_version, new_version,
-                                          value, memory,
+                                          value, std::move(memory),
                                           prev_region, this_old_region,
                                           this_new_region, next_region);
     }
@@ -1047,11 +1047,11 @@ key_state :: enqueue_continuous_key_op(uint64_t old_version,
                                        bool fresh,
                                        bool has_value,
                                        const std::vector<e::slice>& value,
-                                       std::auto_ptr<e::arena> memory)
+                                       std::unique_ptr<e::arena> memory)
 {
     e::intrusive_ptr<key_operation> op;
     op = new key_operation(old_version, new_version, fresh,
-                           has_value, value, memory);
+                           has_value, value, std::move(memory));
     op->set_continuous();
 
     if ((!has_value && !m_has_old_value) ||
@@ -1069,7 +1069,7 @@ e::intrusive_ptr<key_operation>
 key_state :: enqueue_discontinuous_key_op(uint64_t old_version,
                                           uint64_t new_version,
                                           const std::vector<e::slice>& value,
-                                          std::auto_ptr<e::arena> memory,
+                                          std::unique_ptr<e::arena> memory,
                                           const region_id& prev_region,
                                           const region_id& this_old_region,
                                           const region_id& this_new_region,
@@ -1077,7 +1077,7 @@ key_state :: enqueue_discontinuous_key_op(uint64_t old_version,
 {
     e::intrusive_ptr<key_operation> op;
     op = new key_operation(old_version, new_version, false,
-                           true, value, memory);
+                           true, value, std::move(memory));
     op->set_discontinuous(prev_region, this_old_region, this_new_region, next_region);
     m_deferred.push_back(op);
     return op;
@@ -1219,14 +1219,14 @@ key_state :: drain_changes(replication_manager*,
         e::intrusive_ptr<key_operation> op;
         op = new key_operation(old_version, dkc->version, false,
                                false, std::vector<e::slice>(sc.attrs_sz - 1),
-                               std::auto_ptr<e::arena>());
+                               std::unique_ptr<e::arena>());
         op->set_continuous();
         add_response(client_response(dkc->version, dkc->from, dkc->nonce, NET_SUCCESS));
         m_deferred.push_back(op);
         return;
     }
 
-    std::auto_ptr<e::arena> memory(new e::arena());
+    std::unique_ptr<e::arena> memory(new e::arena());
     std::vector<e::slice> new_value(sc.attrs_sz - 1);
 
     // if there is no old value, pretend it is "new_value" which is
@@ -1246,7 +1246,7 @@ key_state :: drain_changes(replication_manager*,
 
     e::intrusive_ptr<key_operation> op;
     op = new key_operation(old_version, dkc->version, !has_old_value,
-                           true, new_value, memory);
+                           true, new_value, std::move(memory));
     op->set_continuous();
     add_response(client_response(dkc->version, dkc->from, dkc->nonce, NET_SUCCESS));
     m_deferred.push_back(op);

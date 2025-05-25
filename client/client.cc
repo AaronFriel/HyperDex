@@ -190,7 +190,7 @@ client :: get(const char* space, const char* _key, size_t _key_sz,
         sz += pack_size(aw);
     }
 
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     e::packer pa = msg->pack_at(HYPERDEX_CLIENT_HEADER_SIZE_REQ) << key;
 
     if (m_macaroons_sz)
@@ -198,7 +198,7 @@ client :: get(const char* space, const char* _key, size_t _key_sz,
         pa = pa << aw;
     }
 
-    return send_keyop(space, key, REQ_GET, msg, op, status);
+    return send_keyop(space, key, REQ_GET, std::move(msg), op, status);
 }
 
 int64_t
@@ -267,7 +267,7 @@ client :: get_partial(const char* space, const char* _key, size_t _key_sz,
         sz += pack_size(aw);
     }
 
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     e::packer pa = msg->pack_at(HYPERDEX_CLIENT_HEADER_SIZE_REQ);
     pa = pa << key << attrnums;
 
@@ -276,7 +276,7 @@ client :: get_partial(const char* space, const char* _key, size_t _key_sz,
         pa = pa << aw;
     }
 
-    return send_keyop(space, key, REQ_GET_PARTIAL, msg, op, status);
+    return send_keyop(space, key, REQ_GET_PARTIAL, std::move(msg), op, status);
 }
 
 #define SEARCH_BOILERPLATE \
@@ -312,9 +312,9 @@ client :: search(const char* space,
     size_t sz = HYPERDEX_CLIENT_HEADER_SIZE_REQ
               + sizeof(uint64_t)
               + pack_size(checks);
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     msg->pack_at(HYPERDEX_CLIENT_HEADER_SIZE_REQ) << client_id << checks;
-    return perform_aggregation(servers, op, REQ_SEARCH_START, msg, status);
+    return perform_aggregation(servers, op, REQ_SEARCH_START, std::move(msg), status);
 }
 
 int64_t
@@ -328,9 +328,9 @@ client :: search_describe(const char* space,
     op = new pending_search_describe(client_id, status, description);
     size_t sz = HYPERDEX_CLIENT_HEADER_SIZE_REQ
               + pack_size(checks);
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     msg->pack_at(HYPERDEX_CLIENT_HEADER_SIZE_REQ) << checks;
-    return perform_aggregation(servers, op, REQ_SEARCH_DESCRIBE, msg, status);
+    return perform_aggregation(servers, op, REQ_SEARCH_DESCRIBE, std::move(msg), status);
 }
 
 int64_t
@@ -372,9 +372,9 @@ client :: sorted_search(const char* space,
               + sizeof(limit)
               + sizeof(sort_by_num)
               + sizeof(max);
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     msg->pack_at(HYPERDEX_CLIENT_HEADER_SIZE_REQ) << checks << limit << sort_by_num << max;
-    return perform_aggregation(servers, op, REQ_SORTED_SEARCH, msg, status);
+    return perform_aggregation(servers, op, REQ_SORTED_SEARCH, std::move(msg), status);
 }
 
 int64_t
@@ -389,9 +389,9 @@ client :: count(const char* space,
     op = new pending_count(client_id, status, result);
     size_t sz = HYPERDEX_CLIENT_HEADER_SIZE_REQ
               + pack_size(checks);
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     msg->pack_at(HYPERDEX_CLIENT_HEADER_SIZE_REQ) << checks;
-    return perform_aggregation(servers, op, REQ_COUNT, msg, status);
+    return perform_aggregation(servers, op, REQ_COUNT, std::move(msg), status);
 }
 
 int64_t
@@ -427,7 +427,7 @@ client :: perform_funcall(const hyperdex_client_keyop_info* opinfo,
 
     e::intrusive_ptr<pending> op;
     op = new pending_atomic(m_next_client_id++, status);
-    std::auto_ptr<e::buffer> msg;
+    std::unique_ptr<e::buffer> msg;
     auth_wallet aw(m_macaroons, m_macaroons_sz);
     size_t header_sz = HYPERDEX_CLIENT_HEADER_SIZE_REQ
                      + pack_size(key);
@@ -457,7 +457,7 @@ client :: perform_funcall(const hyperdex_client_keyop_info* opinfo,
         msg->pack_at(msg->capacity() - footer_sz) << aw;
     }
 
-    return send_keyop(space, key, REQ_ATOMIC, msg, op, status);
+    return send_keyop(space, key, REQ_ATOMIC, std::move(msg), op, status);
 }
 
 int64_t
@@ -473,7 +473,7 @@ client :: perform_group_funcall(const hyperdex_client_keyop_info* opinfo,
     int64_t client_id = m_next_client_id++;
     e::intrusive_ptr<pending_aggregation> op;
     op = new pending_group_atomic(client_id, status, update_count);
-    std::auto_ptr<e::buffer> inner_msg;
+    std::unique_ptr<e::buffer> inner_msg;
     ret = perform_funcall(space, sc, opinfo,
                           chks, chks_sz,
                           attrs, attrs_sz,
@@ -489,11 +489,11 @@ client :: perform_group_funcall(const hyperdex_client_keyop_info* opinfo,
               + sizeof(uint64_t)
               + pack_size(checks)
               + inner_msg->size();
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     e::packer pa = msg->pack_at(HYPERDEX_CLIENT_HEADER_SIZE_REQ);
     e::slice ims = inner_msg->as_slice();
     pa = pa << checks << e::pack_memmove(ims.data(), ims.size());
-    return perform_aggregation(servers, op, REQ_GROUP_ATOMIC, msg, status);
+    return perform_aggregation(servers, op, REQ_GROUP_ATOMIC, std::move(msg), status);
 }
 
 int64_t
@@ -556,7 +556,7 @@ client :: loop(int timeout, hyperdex_client_returncode* status)
         }
 
         uint64_t sid_num;
-        std::auto_ptr<e::buffer> msg;
+        std::unique_ptr<e::buffer> msg;
         busybee_returncode rc = m_busybee->recv(timeout, &sid_num, &msg);
         server_id id(sid_num);
 
@@ -620,7 +620,7 @@ client :: loop(int timeout, hyperdex_client_returncode* status)
             id == psp.si &&
             m_config.get_server_id(vfrom) == id)
         {
-            if (!op->handle_message(this, id, vfrom, msg_type, msg, up, status, &m_last_error))
+            if (!op->handle_message(this, id, vfrom, msg_type, std::move(msg), up, status, &m_last_error))
             {
                 return -1;
             }
@@ -1046,7 +1046,7 @@ client :: perform_funcall(const char* space, const schema* sc,
                           size_t header_sz,
                           size_t footer_sz,
                           hyperdex_client_returncode* status,
-                          std::auto_ptr<e::buffer>* msg)
+                          std::unique_ptr<e::buffer>* msg)
 {
     std::vector<attribute_check> checks;
     std::vector<funcall> funcs;
@@ -1096,7 +1096,7 @@ int64_t
 client :: perform_aggregation(const std::vector<virtual_server_id>& servers,
                               e::intrusive_ptr<pending_aggregation> _op,
                               network_msgtype mt,
-                              std::auto_ptr<e::buffer> msg,
+                              std::unique_ptr<e::buffer> msg,
                               hyperdex_client_returncode* status)
 {
     e::intrusive_ptr<pending> op(_op.get());
@@ -1105,9 +1105,9 @@ client :: perform_aggregation(const std::vector<virtual_server_id>& servers,
     {
         uint64_t nonce = m_next_server_nonce++;
         pending_server_pair psp(m_config.get_server_id(servers[i]), servers[i], op);
-        std::auto_ptr<e::buffer> msg_copy(msg->copy());
+        std::unique_ptr<e::buffer> msg_copy(msg->copy());
 
-        if (!send(mt, psp.vsi, nonce, msg_copy, op, status))
+        if (!send(mt, psp.vsi, nonce, std::move(msg_copy), op, status))
         {
             m_failed.push_back(psp);
         }
@@ -1191,7 +1191,7 @@ bool
 client :: send(network_msgtype mt,
                const virtual_server_id& to,
                uint64_t nonce,
-               std::auto_ptr<e::buffer> msg,
+               std::unique_ptr<e::buffer> msg,
                e::intrusive_ptr<pending> op,
                hyperdex_client_returncode* status)
 {
@@ -1201,7 +1201,7 @@ client :: send(network_msgtype mt,
     msg->pack_at(BUSYBEE_HEADER_SIZE)
         << type << flags << version << to << nonce;
     server_id id = m_config.get_server_id(to);
-    busybee_returncode rc = m_busybee->send(id.get(), msg);
+    busybee_returncode rc = m_busybee->send(id.get(), std::move(msg));
 
     switch (rc)
     {
@@ -1229,7 +1229,7 @@ int64_t
 client :: send_keyop(const char* space,
                      const e::slice& key,
                      network_msgtype mt,
-                     std::auto_ptr<e::buffer> msg,
+                     std::unique_ptr<e::buffer> msg,
                      e::intrusive_ptr<pending> op,
                      hyperdex_client_returncode* status)
 {
@@ -1246,7 +1246,7 @@ client :: send_keyop(const char* space,
 
     int64_t nonce = m_next_server_nonce++;
 
-    if (send(mt, vsi, nonce, msg, op, status))
+    if (send(mt, vsi, nonce, std::move(msg), op, status))
     {
         return op->client_visible_id();
     }
@@ -1341,7 +1341,7 @@ int64_t client::uxact_commit(microtransaction *transaction,
 
     e::intrusive_ptr<pending> op;
     op = new pending_atomic(m_next_client_id++, status);
-    std::auto_ptr<e::buffer> msg;
+    std::unique_ptr<e::buffer> msg;
     auth_wallet aw(m_macaroons, m_macaroons_sz);
     size_t header_sz = HYPERDEX_CLIENT_HEADER_SIZE_REQ
                      + pack_size(key);
@@ -1367,7 +1367,7 @@ int64_t client::uxact_commit(microtransaction *transaction,
         msg->pack_at(msg->capacity() - footer_sz) << aw;
     }
 
-    int64_t result = send_keyop(transaction->space, key, REQ_ATOMIC, msg, op, status);
+    int64_t result = send_keyop(transaction->space, key, REQ_ATOMIC, std::move(msg), op, status);
     delete transaction;
     return result;
 }
@@ -1391,7 +1391,7 @@ client :: uxact_cond_commit(microtransaction *transaction,
 
     e::intrusive_ptr<pending> op;
     op = new pending_atomic(m_next_client_id++, status);
-    std::auto_ptr<e::buffer> msg;
+    std::unique_ptr<e::buffer> msg;
     auth_wallet aw(m_macaroons, m_macaroons_sz);
     size_t header_sz = HYPERDEX_CLIENT_HEADER_SIZE_REQ
                      + pack_size(key);
@@ -1425,7 +1425,7 @@ client :: uxact_cond_commit(microtransaction *transaction,
         msg->pack_at(msg->capacity() - footer_sz) << aw;
     }
 
-    int64_t result = send_keyop(transaction->space, key, REQ_ATOMIC, msg, op, status);
+    int64_t result = send_keyop(transaction->space, key, REQ_ATOMIC, std::move(msg), op, status);
     delete transaction;
     return result;
 }
@@ -1444,7 +1444,7 @@ client :: uxact_group_commit(microtransaction *transaction,
     e::intrusive_ptr<pending_aggregation> op;
     op = new pending_group_atomic(client_id, status, update_count);
 
-    std::auto_ptr<e::buffer> inner_msg;
+    std::unique_ptr<e::buffer> inner_msg;
     const std::vector<hyperdex::attribute_check> checks_;
     ret = transaction->generate_message(0, 0, checks_, &inner_msg);
 
@@ -1457,12 +1457,12 @@ client :: uxact_group_commit(microtransaction *transaction,
               + sizeof(uint64_t)
               + pack_size(checks)
               + inner_msg->size();
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     e::packer pa = msg->pack_at(HYPERDEX_CLIENT_HEADER_SIZE_REQ);
     e::slice ims = inner_msg->as_slice();
     pa = pa << checks << e::pack_memmove(ims.data(), ims.size());
 
-    int64_t result = perform_aggregation(servers, op, REQ_GROUP_ATOMIC, msg, status);
+    int64_t result = perform_aggregation(servers, op, REQ_GROUP_ATOMIC, std::move(msg), status);
     delete transaction;
     return result;
 }
@@ -1516,7 +1516,7 @@ client :: set_type_conversion(bool enabled)
 int64_t
 microtransaction::generate_message(size_t header_sz, size_t footer_sz,
                                    const std::vector<attribute_check>& checks,
-                                   std::auto_ptr<e::buffer>* msg)
+                                   std::unique_ptr<e::buffer>* msg)
 {
     const bool fail_if_not_found = false;
     const bool fail_if_found = false;

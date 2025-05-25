@@ -89,28 +89,28 @@ class communication
         bool send_client(const virtual_server_id& from,
                          const server_id& to,
                          network_msgtype msg_type,
-                         std::auto_ptr<e::buffer> msg);
+                         std::unique_ptr<e::buffer> msg);
         bool send(const virtual_server_id& from,
                   const server_id& to,
                   network_msgtype msg_type,
-                  std::auto_ptr<e::buffer> msg);
+                  std::unique_ptr<e::buffer> msg);
         bool send(const virtual_server_id& from,
                   const virtual_server_id& to,
                   network_msgtype msg_type,
-                  std::auto_ptr<e::buffer> msg);
+                  std::unique_ptr<e::buffer> msg);
         bool send(const virtual_server_id& to,
                   network_msgtype msg_type,
-                  std::auto_ptr<e::buffer> msg);
+                  std::unique_ptr<e::buffer> msg);
         bool send_exact(const virtual_server_id& from,
                         const virtual_server_id& to,
                         network_msgtype msg_type,
-                        std::auto_ptr<e::buffer> msg);
+                        std::unique_ptr<e::buffer> msg);
         bool recv(e::garbage_collector::thread_state* ts,
                   server_id* from,
                   virtual_server_id* vfrom,
                   virtual_server_id* vto,
                   network_msgtype* msg_type,
-                  std::auto_ptr<e::buffer>* msg,
+                  std::unique_ptr<e::buffer>* msg,
                   e::unpacker* up);
 
     private:
@@ -126,7 +126,7 @@ class communication
     private:
         daemon* m_daemon;
         mapper m_busybee_mapper;
-        std::auto_ptr<busybee_server> m_busybee;
+        std::unique_ptr<busybee_server> m_busybee;
         e::lockfree_fifo<early_message> m_early_messages;
 };
 

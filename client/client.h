@@ -62,7 +62,7 @@ struct microtransaction
 
     int64_t generate_message(size_t header_sz, size_t footer_sz,
                              const std::vector<attribute_check>& checks,
-                             std::auto_ptr<e::buffer>* msg);
+                             std::unique_ptr<e::buffer>* msg);
 
     const char* space;
     const schema& sc;
@@ -233,23 +233,23 @@ class client
                                 size_t header_sz,
                                 size_t footer_sz,
                                 hyperdex_client_returncode* status,
-                                std::auto_ptr<e::buffer>* msg);
+                                std::unique_ptr<e::buffer>* msg);
         int64_t perform_aggregation(const std::vector<virtual_server_id>& servers,
                                     e::intrusive_ptr<pending_aggregation> op,
                                     network_msgtype mt,
-                                    std::auto_ptr<e::buffer> msg,
+                                    std::unique_ptr<e::buffer> msg,
                                     hyperdex_client_returncode* status);
         bool maintain_coord_connection(hyperdex_client_returncode* status);
         bool send(network_msgtype mt,
                   const virtual_server_id& to,
                   uint64_t nonce,
-                  std::auto_ptr<e::buffer> msg,
+                  std::unique_ptr<e::buffer> msg,
                   e::intrusive_ptr<pending> op,
                   hyperdex_client_returncode* status);
         int64_t send_keyop(const char* space,
                            const e::slice& key,
                            network_msgtype mt,
-                           std::auto_ptr<e::buffer> msg,
+                           std::unique_ptr<e::buffer> msg,
                            e::intrusive_ptr<pending> op,
                            hyperdex_client_returncode* status);
         void handle_disruption(const server_id& si);
@@ -257,7 +257,7 @@ class client
     private:
         replicant_client* m_coord;
         mapper m_busybee_mapper;
-        std::auto_ptr<busybee_client> m_busybee;
+        std::unique_ptr<busybee_client> m_busybee;
         // configuration
         configuration m_config;
         int64_t m_config_id;

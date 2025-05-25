@@ -68,7 +68,7 @@ static const char* space = "consistency";
 static const char* host = "127.0.0.1";
 static po6::net::ipaddr coord;
 static long port = 1982;
-static std::auto_ptr<po6::threads::barrier> barrier;
+static std::unique_ptr<po6::threads::barrier> barrier;
 static po6::threads::mutex results_lock;
 static int done = 0;
 static std::map<hyperdex_client_returncode, uint64_t> failed_puts;

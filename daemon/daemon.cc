@@ -37,6 +37,7 @@
 
 // STL
 #include <sstream>
+#include <memory>
 
 // Google Log
 #include <glog/logging.h>
@@ -572,7 +573,7 @@ daemon :: loop(size_t thread)
     virtual_server_id vfrom;
     virtual_server_id vto;
     network_msgtype type;
-    std::auto_ptr<e::buffer> msg;
+    std::unique_ptr<e::buffer> msg;
     e::unpacker up;
 
     while (m_comm.recv(&ts, &from, &vfrom, &vto, &type, &msg, &up))
@@ -583,86 +584,86 @@ daemon :: loop(size_t thread)
         switch (type)
         {
             case REQ_GET:
-                process_req_get(from, vfrom, vto, msg, up);
+                process_req_get(from, vfrom, vto, std::move(msg), up);
                 m_perf_req_get.tap();
                 break;
             case REQ_GET_PARTIAL:
-                process_req_get_partial(from, vfrom, vto, msg, up);
+                process_req_get_partial(from, vfrom, vto, std::move(msg), up);
                 m_perf_req_get_partial.tap();
                 break;
             case REQ_ATOMIC:
-                process_req_atomic(from, vfrom, vto, msg, up);
+                process_req_atomic(from, vfrom, vto, std::move(msg), up);
                 m_perf_req_atomic.tap();
                 break;
             case REQ_SEARCH_START:
-                process_req_search_start(from, vfrom, vto, msg, up);
+                process_req_search_start(from, vfrom, vto, std::move(msg), up);
                 m_perf_req_search_start.tap();
                 break;
             case REQ_SEARCH_NEXT:
-                process_req_search_next(from, vfrom, vto, msg, up);
+                process_req_search_next(from, vfrom, vto, std::move(msg), up);
                 m_perf_req_search_next.tap();
                 break;
             case REQ_SEARCH_STOP:
-                process_req_search_stop(from, vfrom, vto, msg, up);
+                process_req_search_stop(from, vfrom, vto, std::move(msg), up);
                 m_perf_req_search_stop.tap();
                 break;
             case REQ_SORTED_SEARCH:
-                process_req_sorted_search(from, vfrom, vto, msg, up);
+                process_req_sorted_search(from, vfrom, vto, std::move(msg), up);
                 m_perf_req_sorted_search.tap();
                 break;
             case REQ_COUNT:
-                process_req_count(from, vfrom, vto, msg, up);
+                process_req_count(from, vfrom, vto, std::move(msg), up);
                 m_perf_req_count.tap();
                 break;
             case REQ_SEARCH_DESCRIBE:
-                process_req_search_describe(from, vfrom, vto, msg, up);
+                process_req_search_describe(from, vfrom, vto, std::move(msg), up);
                 m_perf_req_search_describe.tap();
                 break;
             case REQ_GROUP_ATOMIC:
-                process_req_group_atomic(from, vfrom, vto, msg, up);
+                process_req_group_atomic(from, vfrom, vto, std::move(msg), up);
                 m_perf_req_group_atomic.tap();
                 break;
             case CHAIN_OP:
-                process_chain_op(from, vfrom, vto, msg, up);
+                process_chain_op(from, vfrom, vto, std::move(msg), up);
                 m_perf_chain_op.tap();
                 break;
             case CHAIN_SUBSPACE:
-                process_chain_subspace(from, vfrom, vto, msg, up);
+                process_chain_subspace(from, vfrom, vto, std::move(msg), up);
                 m_perf_chain_subspace.tap();
                 break;
             case CHAIN_ACK:
-                process_chain_ack(from, vfrom, vto, msg, up);
+                process_chain_ack(from, vfrom, vto, std::move(msg), up);
                 m_perf_chain_ack.tap();
                 break;
             case XFER_HS:
-                process_xfer_handshake_syn(from, vfrom, vto, msg, up);
+                process_xfer_handshake_syn(from, vfrom, vto, std::move(msg), up);
                 m_perf_xfer_handshake_syn.tap();
                 break;
             case XFER_HSA:
-                process_xfer_handshake_synack(from, vfrom, vto, msg, up);
+                process_xfer_handshake_synack(from, vfrom, vto, std::move(msg), up);
                 m_perf_xfer_handshake_synack.tap();
                 break;
             case XFER_HA:
-                process_xfer_handshake_ack(from, vfrom, vto, msg, up);
+                process_xfer_handshake_ack(from, vfrom, vto, std::move(msg), up);
                 m_perf_xfer_handshake_ack.tap();
                 break;
             case XFER_HW:
-                process_xfer_handshake_wiped(from, vfrom, vto, msg, up);
+                process_xfer_handshake_wiped(from, vfrom, vto, std::move(msg), up);
                 m_perf_xfer_handshake_wiped.tap();
                 break;
             case XFER_OP:
-                process_xfer_op(from, vfrom, vto, msg, up);
+                process_xfer_op(from, vfrom, vto, std::move(msg), up);
                 m_perf_xfer_op.tap();
                 break;
             case XFER_ACK:
-                process_xfer_ack(from, vfrom, vto, msg, up);
+                process_xfer_ack(from, vfrom, vto, std::move(msg), up);
                 m_perf_xfer_ack.tap();
                 break;
             case BACKUP:
-                process_backup(from, vfrom, vto, msg, up);
+                process_backup(from, vfrom, vto, std::move(msg), up);
                 m_perf_backup.tap();
             case PERF_COUNTERS:
-                process_perf_counters(from, vfrom, vto, msg, up);
+                process_perf_counters(from, vfrom, vto, std::move(msg), up);
                 m_perf_perf_counters.tap();
                 break;
             case RESP_GET:
@@ -692,7 +693,7 @@ void
 daemon :: process_req_get(server_id from,
                           virtual_server_id,
                           virtual_server_id vto,
-                          std::auto_ptr<e::buffer> msg,
+                          std::unique_ptr<e::buffer> msg,
                           e::unpacker up)
 {
     uint64_t nonce;
@@ -766,14 +767,14 @@ daemon :: process_req_get(server_id from,
         }
     }
 
-    m_comm.send_client(vto, from, RESP_GET, msg);
+    m_comm.send_client(vto, from, RESP_GET, std::move(msg));
 }
 
 void
 daemon :: process_req_get_partial(server_id from,
                                   virtual_server_id,
                                   virtual_server_id vto,
-                                  std::auto_ptr<e::buffer> msg,
+                                  std::unique_ptr<e::buffer> msg,
                                   e::unpacker up)
 {
     uint64_t nonce;
@@ -858,20 +859,20 @@ daemon :: process_req_get_partial(server_id from,
         }
     }
 
-    m_comm.send_client(vto, from, RESP_GET_PARTIAL, msg);
+    m_comm.send_client(vto, from, RESP_GET_PARTIAL, std::move(msg));
 }
 
 void
 daemon :: process_req_atomic(server_id from,
                              virtual_server_id,
                              virtual_server_id vto,
-                             std::auto_ptr<e::buffer> msg,
+                             std::unique_ptr<e::buffer> msg,
                              e::unpacker up)
 {
     // initialize nonce from pseudo-random memory
     uint64_t nonce;
 
-    std::auto_ptr<key_change> kc(new key_change());
+    std::unique_ptr<key_change> kc(new key_change());
     up = up >> nonce >> *kc;
 
     if (up.error())
@@ -880,14 +881,14 @@ daemon :: process_req_atomic(server_id from,
         return;
     }
 
-    m_repl.client_atomic(from, vto, nonce, kc, msg);
+    m_repl.client_atomic(from, vto, nonce, std::move(kc), std::move(msg));
 }
 
 void
 daemon :: process_req_search_start(server_id from,
                                    virtual_server_id,
                                    virtual_server_id vto,
-                                   std::auto_ptr<e::buffer> msg,
+                                   std::unique_ptr<e::buffer> msg,
                                    e::unpacker up)
 {
     uint64_t nonce;
@@ -900,14 +901,14 @@ daemon :: process_req_search_start(server_id from,
         return;
     }
 
-    m_sm.start(from, vto, msg, nonce, search_id, &checks);
+    m_sm.start(from, vto, std::move(msg), nonce, search_id, &checks);
 }
 
 void
 daemon :: process_req_search_next(server_id from,
                                   virtual_server_id,
                                   virtual_server_id vto,
-                                  std::auto_ptr<e::buffer> msg,
+                                  std::unique_ptr<e::buffer> msg,
                                   e::unpacker up)
 {
     uint64_t nonce;
@@ -926,7 +927,7 @@ void
 daemon :: process_req_search_stop(server_id from,
                                   virtual_server_id,
                                   virtual_server_id vto,
-                                  std::auto_ptr<e::buffer> msg,
+                                  std::unique_ptr<e::buffer> msg,
                                   e::unpacker up)
 {
     uint64_t nonce;
@@ -945,7 +946,7 @@ void
 daemon :: process_req_sorted_search(server_id from,
                                     virtual_server_id,
                                     virtual_server_id vto,
-                                    std::auto_ptr<e::buffer> msg,
+                                    std::unique_ptr<e::buffer> msg,
                                     e::unpacker up)
 {
     uint64_t nonce;
@@ -967,7 +968,7 @@ void
 daemon :: process_req_count(server_id from,
                             virtual_server_id,
                             virtual_server_id vto,
-                            std::auto_ptr<e::buffer> msg,
+                            std::unique_ptr<e::buffer> msg,
                             e::unpacker up)
 {
     uint64_t nonce;
@@ -986,7 +987,7 @@ void
 daemon :: process_req_search_describe(server_id from,
                                       virtual_server_id,
                                       virtual_server_id vto,
-                                      std::auto_ptr<e::buffer> msg,
+                                      std::unique_ptr<e::buffer> msg,
                                       e::unpacker up)
 {
     uint64_t nonce;
@@ -1005,7 +1006,7 @@ void
 daemon :: process_req_group_atomic(server_id from,
                                    virtual_server_id,
                                    virtual_server_id vto,
-                                   std::auto_ptr<e::buffer> msg,
+                                   std::unique_ptr<e::buffer> msg,
                                    e::unpacker up)
 {
     uint64_t nonce;
@@ -1027,7 +1028,7 @@ void
 daemon :: process_chain_op(server_id,
                            virtual_server_id vfrom,
                            virtual_server_id vto,
-                           std::auto_ptr<e::buffer> msg,
+                           std::unique_ptr<e::buffer> msg,
                            e::unpacker up)
 {
     uint8_t flags;
@@ -1044,14 +1045,14 @@ daemon :: process_chain_op(server_id,
 
     bool fresh = flags & 1;
     bool has_value = flags & 2;
-    m_repl.chain_op(vfrom, vto, old_version, new_version, fresh, has_value, key, value, msg);
+    m_repl.chain_op(vfrom, vto, old_version, new_version, fresh, has_value, key, value, std::move(msg));
 }
 
 void
 daemon :: process_chain_subspace(server_id,
                                  virtual_server_id vfrom,
                                  virtual_server_id vto,
-                                 std::auto_ptr<e::buffer> msg,
+                                 std::unique_ptr<e::buffer> msg,
                                  e::unpacker up)
 {
     uint64_t old_version;
@@ -1070,7 +1071,7 @@ daemon :: process_chain_subspace(server_id,
         return;
     }
 
-    m_repl.chain_subspace(vfrom, vto, old_version, new_version, key, value, msg,
+    m_repl.chain_subspace(vfrom, vto, old_version, new_version, key, value, std::move(msg),
                           prev_region, this_old_region, this_new_region, next_region);
 }
 
@@ -1078,7 +1079,7 @@ void
 daemon :: process_chain_ack(server_id,
                             virtual_server_id vfrom,
                             virtual_server_id vto,
-                            std::auto_ptr<e::buffer> msg,
+                            std::unique_ptr<e::buffer> msg,
                             e::unpacker up)
 {
     uint64_t version;
@@ -1097,7 +1098,7 @@ void
 daemon :: process_xfer_handshake_syn(server_id,
                                      virtual_server_id vfrom,
                                      virtual_server_id,
-                                     std::auto_ptr<e::buffer> msg,
+                                     std::unique_ptr<e::buffer> msg,
                                      e::unpacker up)
 {
     transfer_id xid;
@@ -1115,7 +1116,7 @@ void
 daemon :: process_xfer_handshake_synack(server_id from,
                                         virtual_server_id,
                                         virtual_server_id to,
-                                        std::auto_ptr<e::buffer> msg,
+                                        std::unique_ptr<e::buffer> msg,
                                         e::unpacker up)
 {
     transfer_id xid;
@@ -1134,7 +1135,7 @@ void
 daemon :: process_xfer_handshake_ack(server_id,
                                      virtual_server_id vfrom,
                                      virtual_server_id,
-                                     std::auto_ptr<e::buffer> msg,
+                                     std::unique_ptr<e::buffer> msg,
                                      e::unpacker up)
 {
     transfer_id xid;
@@ -1154,7 +1155,7 @@ void
 daemon :: process_xfer_handshake_wiped(server_id from,
                                        virtual_server_id,
                                        virtual_server_id to,
-                                       std::auto_ptr<e::buffer> msg,
+                                       std::unique_ptr<e::buffer> msg,
                                        e::unpacker up)
 {
     transfer_id xid;
@@ -1172,7 +1173,7 @@ void
 daemon :: process_xfer_op(server_id,
                           virtual_server_id vfrom,
                           virtual_server_id,
-                          std::auto_ptr<e::buffer> msg,
+                          std::unique_ptr<e::buffer> msg,
                           e::unpacker up)
 {
     uint8_t flags;
@@ -1189,14 +1190,14 @@ daemon :: process_xfer_op(server_id,
     }
 
     bool has_value = flags & 1;
-    m_stm.xfer_op(vfrom, transfer_id(xid), seq_no, has_value, version, msg, key, value);
+    m_stm.xfer_op(vfrom, transfer_id(xid), seq_no, has_value, version, std::move(msg), key, value);
 }
 
 void
 daemon :: process_xfer_ack(server_id from,
                            virtual_server_id,
                            virtual_server_id vto,
-                           std::auto_ptr<e::buffer> msg,
+                           std::unique_ptr<e::buffer> msg,
                            e::unpacker up)
 {
     uint8_t flags;
@@ -1216,7 +1217,7 @@ void
 daemon :: process_backup(server_id from,
                          virtual_server_id,
                          virtual_server_id vto,
-                         std::auto_ptr<e::buffer> msg,
+                         std::unique_ptr<e::buffer> msg,
                          e::unpacker up)
 {
     uint64_t nonce;
@@ -1260,14 +1261,14 @@ daemon :: process_backup(server_id from,
     msg.reset(e::buffer::create(sz));
     e::packer pa = msg->pack_at(HYPERDEX_HEADER_SIZE_VC);
     pa = pa << nonce << static_cast<uint16_t>(result) << path;
-    m_comm.send_client(vto, from, BACKUP, msg);
+    m_comm.send_client(vto, from, BACKUP, std::move(msg));
 }
 
 void
 daemon :: process_perf_counters(server_id from,
                                 virtual_server_id,
                                 virtual_server_id vto,
-                                std::auto_ptr<e::buffer> msg,
+                                std::unique_ptr<e::buffer> msg,
                                 e::unpacker up)
 {
     uint64_t nonce;
@@ -1312,7 +1313,7 @@ daemon :: process_perf_counters(server_id from,
     msg.reset(e::buffer::create(sz));
     msg->pack_at(HYPERDEX_HEADER_SIZE_VC)
         << nonce << e::pack_memmove(out.c_str(), out.size() + 1);
-    m_comm.send_client(vto, from, PERF_COUNTERS, msg);
+    m_comm.send_client(vto, from, PERF_COUNTERS, std::move(msg));
 }
 
 #define INTERVAL 100000000ULL

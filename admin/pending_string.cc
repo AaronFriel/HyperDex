@@ -80,7 +80,7 @@ bool
 pending_string :: handle_message(admin*,
                                  const server_id&,
                                  network_msgtype,
-                                 std::auto_ptr<e::buffer>,
+                                 std::unique_ptr<e::buffer>,
                                  e::unpacker,
                                  hyperdex_admin_returncode*)
 {

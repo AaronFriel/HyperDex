@@ -75,7 +75,7 @@ class key_change
         std::vector<funcall> funcs;
 
         // Authorization info is stored here
-        std::auto_ptr<auth_wallet> auth;
+        std::unique_ptr<auth_wallet> auth;
 };
 
 e::packer

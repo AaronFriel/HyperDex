@@ -29,6 +29,7 @@
 
 // Google Log
 #include <glog/logging.h>
+#include <memory>
 
 // HyperDex
 #include "daemon/key_operation.h"
@@ -40,7 +41,7 @@ key_operation :: key_operation(uint64_t old_version,
                                bool _fresh,
                                bool _has_value,
                                const std::vector<e::slice>& _value,
-                               std::auto_ptr<e::arena> memory)
+                               std::unique_ptr<e::arena> memory)
     : m_ref(0)
     , m_prev_version(old_version)
     , m_this_version(new_version)
@@ -52,7 +53,7 @@ key_operation :: key_operation(uint64_t old_version,
     , m_sent_config_version()
     , m_sent()
     , m_value(_value)
-    , m_memory(memory)
+    , m_memory(std::move(memory))
     , m_type(UNKNOWN)
     , m_this_old_region()
     , m_this_new_region()

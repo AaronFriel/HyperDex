@@ -66,7 +66,7 @@ pending_aggregation :: handle_message(client*,
                                       const server_id& si,
                                       const virtual_server_id& vsi,
                                       network_msgtype,
-                                      std::auto_ptr<e::buffer>,
+                                      std::unique_ptr<e::buffer>,
                                       e::unpacker,
                                       hyperdex_client_returncode*,
                                       e::error*)

@@ -256,11 +256,11 @@ state_transfer_manager :: handshake_synack(const server_id& from,
     }
 
     bool wipe = false;
-    std::auto_ptr<datalayer::replay_iterator> iter;
+    std::unique_ptr<datalayer::replay_iterator> iter;
     iter.reset(m_daemon->m_data.replay_region_from_checkpoint(tos->xfer.rid, timestamp, &wipe));
     tos->handshake_syn = true;
     tos->wipe = wipe;
-    tos->iter = iter;
+    tos->iter = std::move(iter);
     send_handshake_ack(tos->xfer, tos->wipe);
     transfer_more_state(tos);
     LOG(INFO) << "received handshake_synack for " << xid << " @ " << timestamp;
@@ -352,7 +352,7 @@ state_transfer_manager :: xfer_op(const virtual_server_id& from,
                                   uint64_t seq_no,
                                   bool has_value,
                                   uint64_t version,
-                                  std::auto_ptr<e::buffer> msg,
+                                  std::unique_ptr<e::buffer> msg,
                                   const e::slice& key,
                                   const std::vector<e::slice>& value)
 {
@@ -400,7 +400,7 @@ state_transfer_manager :: xfer_op(const virtual_server_id& from,
     op->version = version;
     op->key = key;
     op->value = value;
-    op->msg = msg;
+    op->msg = std::move(msg);
     tis->queued.insert(where_to_put_it, op);
     put_to_disk_and_send_acks(tis);
 }
@@ -630,9 +630,9 @@ state_transfer_manager :: send_handshake_syn(const transfer& xfer)
 {
     size_t sz = HYPERDEX_HEADER_SIZE_VV
               + sizeof(uint64_t);
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     msg->pack_at(HYPERDEX_HEADER_SIZE_VV) << xfer.id;
-    m_daemon->m_comm.send_exact(xfer.vsrc, xfer.vdst, XFER_HS, msg);
+    m_daemon->m_comm.send_exact(xfer.vsrc, xfer.vdst, XFER_HS, std::move(msg));
 }
 
 void
@@ -641,9 +641,9 @@ state_transfer_manager :: send_handshake_synack(const transfer& xfer, uint64_t t
     size_t sz = HYPERDEX_HEADER_SIZE_VV
               + sizeof(uint64_t)
               + sizeof(uint64_t);
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     msg->pack_at(HYPERDEX_HEADER_SIZE_VV) << xfer.id << timestamp;
-    m_daemon->m_comm.send_exact(xfer.vdst, xfer.vsrc, XFER_HSA, msg);
+    m_daemon->m_comm.send_exact(xfer.vdst, xfer.vsrc, XFER_HSA, std::move(msg));
 }
 
 void
@@ -653,9 +653,9 @@ state_transfer_manager :: send_handshake_ack(const transfer& xfer, bool wipe)
     size_t sz = HYPERDEX_HEADER_SIZE_VV
               + sizeof(uint64_t)
               + sizeof(uint8_t);
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     msg->pack_at(HYPERDEX_HEADER_SIZE_VV) << xfer.id << flags;
-    m_daemon->m_comm.send_exact(xfer.vsrc, xfer.vdst, XFER_HA, msg);
+    m_daemon->m_comm.send_exact(xfer.vsrc, xfer.vdst, XFER_HA, std::move(msg));
 }
 
 void
@@ -663,9 +663,9 @@ state_transfer_manager :: send_handshake_wiped(const transfer& xfer)
 {
     size_t sz = HYPERDEX_HEADER_SIZE_VV
               + sizeof(uint64_t);
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     msg->pack_at(HYPERDEX_HEADER_SIZE_VV) << xfer.id;
-    m_daemon->m_comm.send_exact(xfer.vdst, xfer.vsrc, XFER_HW, msg);
+    m_daemon->m_comm.send_exact(xfer.vdst, xfer.vsrc, XFER_HW, std::move(msg));
 }
 
 void
@@ -680,10 +680,10 @@ state_transfer_manager :: send_object(const transfer& xfer,
               + sizeof(uint64_t)
               + sizeof(uint32_t) + op->key.size()
               + pack_size(op->value);
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     msg->pack_at(HYPERDEX_HEADER_SIZE_VV) << flags << xfer.id.get() << op->seq_no
                                           << op->version << op->key << op->value;
-    m_daemon->m_comm.send_exact(xfer.vsrc, xfer.vdst, XFER_OP, msg);
+    m_daemon->m_comm.send_exact(xfer.vsrc, xfer.vdst, XFER_OP, std::move(msg));
 }
 
 void
@@ -694,9 +694,9 @@ state_transfer_manager :: send_ack(const transfer& xfer, uint64_t seq_no)
               + sizeof(uint8_t)
               + sizeof(uint64_t)
               + sizeof(uint64_t);
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     msg->pack_at(HYPERDEX_HEADER_SIZE_VV) << flags << xfer.id.get() << seq_no;
-    m_daemon->m_comm.send_exact(xfer.vdst, xfer.vsrc, XFER_ACK, msg);
+    m_daemon->m_comm.send_exact(xfer.vdst, xfer.vsrc, XFER_ACK, std::move(msg));
 }
 
 state_transfer_manager :: background_thread :: background_thread(state_transfer_manager* stm)

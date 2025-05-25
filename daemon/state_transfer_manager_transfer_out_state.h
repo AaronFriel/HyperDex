@@ -58,7 +58,7 @@ class state_transfer_manager::transfer_out_state
         uint64_t next_seq_no;
         std::list<e::intrusive_ptr<pending> > window;
         size_t window_sz;
-        std::auto_ptr<datalayer::replay_iterator> iter;
+        std::unique_ptr<datalayer::replay_iterator> iter;
         bool handshake_syn; // do we know the other end got a syn?
         bool handshake_ack; // do we know the other end got a ack?
         bool wipe;

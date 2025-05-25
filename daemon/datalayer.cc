@@ -233,7 +233,7 @@ datalayer :: save_state(const server_id& us,
     size_t sz = sizeof(uint64_t)
               + pack_size(bind_to)
               + pack_size(coordinator);
-    std::auto_ptr<e::buffer> state(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> state(e::buffer::create(sz));
     state->pack() << us << bind_to << coordinator;
     leveldb::Status st = m_db->Put(wopts, leveldb::Slice("state", 5),
                                    leveldb::Slice(reinterpret_cast<const char*>(state->data()), state->size()));
@@ -1017,7 +1017,7 @@ datalayer :: disk_version(const region_id& ri)
     opts.fill_cache = false;
     opts.verify_checksums = true;
     opts.snapshot = NULL;
-    std::auto_ptr<leveldb::Iterator> it(m_db->NewIterator(opts));
+    std::unique_ptr<leveldb::Iterator> it(m_db->NewIterator(opts));
     char vbacking[VERSION_BUF_SIZE];
     encode_version(ri, UINT64_MAX, vbacking);
     leveldb::Slice key(vbacking, VERSION_BUF_SIZE);
@@ -1098,7 +1098,7 @@ datalayer :: largest_checkpoint_for(const region_id& ri, uint64_t* checkpoint)
 
     leveldb::ReadOptions opts;
     opts.verify_checksums = true;
-    std::auto_ptr<leveldb::Iterator> it;
+    std::unique_ptr<leveldb::Iterator> it;
     it.reset(m_db->NewIterator(opts));
     char cbacking[CHECKPOINT_BUF_SIZE];
     encode_checkpoint(ri, 0, cbacking);
@@ -1165,7 +1165,7 @@ datalayer :: replay_region_from_checkpoint(const region_id& ri,
 
     leveldb::ReadOptions opts;
     opts.verify_checksums = true;
-    std::auto_ptr<leveldb::Iterator> it;
+    std::unique_ptr<leveldb::Iterator> it;
     it.reset(m_db->NewIterator(opts));
     char cbacking[CHECKPOINT_BUF_SIZE];
     encode_checkpoint(ri, 0, cbacking);
@@ -1255,7 +1255,7 @@ datalayer :: only_key_is_hyperdex_key()
     opts.fill_cache = false;
     opts.verify_checksums = true;
     opts.snapshot = NULL;
-    std::auto_ptr<leveldb::Iterator> it(m_db->NewIterator(opts));
+    std::unique_ptr<leveldb::Iterator> it(m_db->NewIterator(opts));
     it->SeekToFirst();
     bool seen = false;
 
@@ -1285,7 +1285,7 @@ datalayer :: upgrade_13x_to_14()
     ropts.fill_cache = false;
     ropts.verify_checksums = true;
     ropts.snapshot = NULL;
-    std::auto_ptr<leveldb::Iterator> it(m_db->NewIterator(ropts));
+    std::unique_ptr<leveldb::Iterator> it(m_db->NewIterator(ropts));
     it->Seek(leveldb::Slice("a", 1));
 
     while (it->Valid())

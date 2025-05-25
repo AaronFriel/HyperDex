@@ -60,7 +60,7 @@ class search_manager
     public:
         void start(const server_id& from,
                    const virtual_server_id& to,
-                   std::auto_ptr<e::buffer> msg,
+                   std::unique_ptr<e::buffer> msg,
                    uint64_t nonce,
                    uint64_t search_id,
                    std::vector<attribute_check>* checks);

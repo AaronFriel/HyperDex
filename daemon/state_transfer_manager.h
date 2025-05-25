@@ -84,7 +84,7 @@ class state_transfer_manager
                      uint64_t seq_no,
                      bool has_value,
                      uint64_t version,
-                     std::auto_ptr<e::buffer> msg,
+                     std::unique_ptr<e::buffer> msg,
                      const e::slice& key,
                      const std::vector<e::slice>& value);
         void xfer_ack(const server_id& from,
@@ -124,7 +124,7 @@ class state_transfer_manager
         daemon* m_daemon;
         std::vector<e::intrusive_ptr<transfer_in_state> > m_transfers_in;
         std::vector<e::intrusive_ptr<transfer_out_state> > m_transfers_out;
-        const std::auto_ptr<background_thread> m_background_thread;
+        const std::unique_ptr<background_thread> m_background_thread;
 };
 
 END_HYPERDEX_NAMESPACE

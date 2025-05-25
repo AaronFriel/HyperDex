@@ -211,10 +211,10 @@ class datalayer
         leveldb_db_ptr m_db;
         std::vector<index_state> m_indices;
         std::map<region_id, uint64_t> m_versions;
-        const std::auto_ptr<checkpointer_thread> m_checkpointer;
-        const std::auto_ptr<wiper_indexer_mediator> m_mediator;
-        const std::auto_ptr<indexer_thread> m_indexer;
-        const std::auto_ptr<wiper_thread> m_wiper;
+        const std::unique_ptr<checkpointer_thread> m_checkpointer;
+        const std::unique_ptr<wiper_indexer_mediator> m_mediator;
+        const std::unique_ptr<indexer_thread> m_indexer;
+        const std::unique_ptr<wiper_thread> m_wiper;
 };
 
 class datalayer::reference

@@ -56,7 +56,7 @@ class pending_raw_backup : public pending
         virtual bool handle_message(admin* adm,
                                     const server_id& si,
                                     network_msgtype mt,
-                                    std::auto_ptr<e::buffer> msg,
+                                    std::unique_ptr<e::buffer> msg,
                                     e::unpacker up,
                                     hyperdex_admin_returncode* status);
 

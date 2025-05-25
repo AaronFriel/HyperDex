@@ -57,7 +57,7 @@ class pending_group_atomic : public pending_aggregation
                                     const server_id& si,
                                     const virtual_server_id& vsi,
                                     network_msgtype mt,
-                                    std::auto_ptr<e::buffer> msg,
+                                    std::unique_ptr<e::buffer> msg,
                                     e::unpacker up,
                                     hyperdex_client_returncode* status,
                                     e::error* error);

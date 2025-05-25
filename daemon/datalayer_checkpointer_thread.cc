@@ -126,7 +126,7 @@ datalayer :: checkpointer_thread :: collect_lower_checkpoints(uint64_t checkpoin
 {
     leveldb::ReadOptions opts;
     opts.verify_checksums = true;
-    std::auto_ptr<leveldb::Iterator> it;
+    std::unique_ptr<leveldb::Iterator> it;
     it.reset(m_daemon->m_data.m_db->NewIterator(opts));
     it->Seek(leveldb::Slice("c", 1));
     std::string lower_bound_timestamp("now");

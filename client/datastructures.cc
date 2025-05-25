@@ -182,7 +182,7 @@ hyperdex_ds_arena :: allocate_list()
 {
     try
     {
-        std::auto_ptr<hyperdex_ds_list> list(new hyperdex_ds_list());
+        std::unique_ptr<hyperdex_ds_list> list(new hyperdex_ds_list());
         m_lists.push_back(list.get());
         return list.release();
     }
@@ -202,7 +202,7 @@ hyperdex_ds_arena :: allocate_set()
 {
     try
     {
-        std::auto_ptr<hyperdex_ds_set> set(new hyperdex_ds_set());
+        std::unique_ptr<hyperdex_ds_set> set(new hyperdex_ds_set());
         m_sets.push_back(set.get());
         return set.release();
     }
@@ -222,7 +222,7 @@ hyperdex_ds_arena :: allocate_map()
 {
     try
     {
-        std::auto_ptr<hyperdex_ds_map> map(new hyperdex_ds_map());
+        std::unique_ptr<hyperdex_ds_map> map(new hyperdex_ds_map());
         m_maps.push_back(map.get());
         return map.release();
     }

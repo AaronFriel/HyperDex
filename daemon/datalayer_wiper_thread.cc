@@ -239,7 +239,7 @@ datalayer :: wiper_thread :: wipe(transfer_id xid, region_id rid)
 void
 datalayer :: wiper_thread :: wipe_checkpoints(region_id rid)
 {
-    std::auto_ptr<leveldb::Iterator> it;
+    std::unique_ptr<leveldb::Iterator> it;
     it.reset(m_daemon->m_data.m_db->NewIterator(leveldb::ReadOptions()));
     char cbacking[CHECKPOINT_BUF_SIZE];
     encode_checkpoint(rid, 0, cbacking);
@@ -282,7 +282,7 @@ datalayer :: wiper_thread :: wipe_objects(region_id rid)
 void
 datalayer :: wiper_thread :: wipe_common(uint8_t c, region_id rid)
 {
-    std::auto_ptr<leveldb::Iterator> it;
+    std::unique_ptr<leveldb::Iterator> it;
     it.reset(m_daemon->m_data.m_db->NewIterator(leveldb::ReadOptions()));
     char backing[sizeof(uint8_t) + VARINT_64_MAX_SIZE];
     char* ptr = backing;

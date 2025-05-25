@@ -45,7 +45,7 @@ class hyperdex::state_transfer_manager::pending
         e::slice key;
         std::vector<e::slice> value;
         bool acked;
-        std::auto_ptr<e::buffer> msg;
+        std::unique_ptr<e::buffer> msg;
         std::string kref;
         datalayer::reference vref;
 

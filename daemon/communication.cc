@@ -36,6 +36,7 @@
 
 // HyperDex
 #include "daemon/communication.h"
+#include <memory>
 #include "daemon/daemon.h"
 
 using hyperdex::communication;
@@ -48,13 +49,35 @@ class communication::early_message
     public:
         early_message();
         early_message(uint64_t version, uint64_t id,
-                      std::auto_ptr<e::buffer> m);
+                      std::unique_ptr<e::buffer> m);
         ~early_message() throw ();
+
+        // Move constructor
+        early_message(early_message&& other) noexcept = default;
+        // Move assignment operator
+        early_message& operator=(early_message&& other) noexcept = default;
+        // Custom copy constructor
+        early_message(const early_message& other)
+            : config_version(other.config_version),
+              id(other.id),
+              msg(other.msg ? std::unique_ptr<e::buffer>(other.msg->copy()) : nullptr)
+        {
+        }
+        // Custom copy assignment operator
+        early_message& operator=(const early_message& other)
+        {
+            if (this != &other) {
+                config_version = other.config_version;
+                id = other.id;
+                msg = other.msg ? std::unique_ptr<e::buffer>(other.msg->copy()) : nullptr;
+            }
+            return *this;
+        }
 
     public:
         uint64_t config_version;
         uint64_t id;
-        std::auto_ptr<e::buffer> msg;
+        std::unique_ptr<e::buffer> msg;
 };
 
 communication :: early_message :: early_message()
@@ -66,10 +89,10 @@ communication :: early_message :: early_message()
 
 communication :: early_message :: early_message(uint64_t v,
                                                 uint64_t i,
-                                                std::auto_ptr<e::buffer> m)
+                                                std::unique_ptr<e::buffer> m)
     : config_version(v)
     , id(i)
-    , msg(m)
+    , msg(std::move(m))
 {
 }
 
@@ -120,7 +143,7 @@ communication :: reconfigure(const configuration&,
     {
         if (em.config_version <= new_config.version())
         {
-            m_busybee->deliver(em.id, em.msg);
+            m_busybee->deliver(em.id, std::move(em.msg));
         }
         else
         {
@@ -138,7 +161,7 @@ bool
 communication :: send_client(const virtual_server_id& from,
                              const server_id& to,
                              network_msgtype msg_type,
-                             std::auto_ptr<e::buffer> msg)
+                             std::unique_ptr<e::buffer> msg)
 {
     assert(msg->size() >= HYPERDEX_HEADER_SIZE_VC);
 
@@ -157,11 +180,11 @@ communication :: send_client(const virtual_server_id& from,
 
     if (to == m_daemon->m_us)
     {
-        m_busybee->deliver(to.get(), msg);
+        m_busybee->deliver(to.get(), std::move(msg));
     }
     else
     {
-        busybee_returncode rc = m_busybee->send(to.get(), msg);
+        busybee_returncode rc = m_busybee->send(to.get(), std::move(msg));
 
         switch (rc)
         {
@@ -187,7 +210,7 @@ bool
 communication :: send(const virtual_server_id& from,
                       const server_id& to,
                       network_msgtype msg_type,
-                      std::auto_ptr<e::buffer> msg)
+                      std::unique_ptr<e::buffer> msg)
 {
     assert(msg->size() >= HYPERDEX_HEADER_SIZE_VV);
 
@@ -212,11 +235,11 @@ communication :: send(const virtual_server_id& from,
 
     if (to == m_daemon->m_us)
     {
-        m_busybee->deliver(to.get(), msg);
+        m_busybee->deliver(to.get(), std::move(msg));
     }
     else
     {
-        busybee_returncode rc = m_busybee->send(to.get(), msg);
+        busybee_returncode rc = m_busybee->send(to.get(), std::move(msg));
 
         switch (rc)
         {
@@ -243,7 +266,7 @@ bool
 communication :: send(const virtual_server_id& from,
                       const virtual_server_id& vto,
                       network_msgtype msg_type,
-                      std::auto_ptr<e::buffer> msg)
+                      std::unique_ptr<e::buffer> msg)
 {
     assert(msg->size() >= HYPERDEX_HEADER_SIZE_VV);
 
@@ -268,11 +291,11 @@ communication :: send(const virtual_server_id& from,
 
     if (to == m_daemon->m_us)
     {
-        m_busybee->deliver(to.get(), msg);
+        m_busybee->deliver(to.get(), std::move(msg));
     }
     else
     {
-        busybee_returncode rc = m_busybee->send(to.get(), msg);
+        busybee_returncode rc = m_busybee->send(to.get(), std::move(msg));
 
         switch (rc)
         {
@@ -297,7 +320,7 @@ communication :: send(const virtual_server_id& from,
 bool
 communication :: send(const virtual_server_id& vto,
                       network_msgtype msg_type,
-                      std::auto_ptr<e::buffer> msg)
+                      std::unique_ptr<e::buffer> msg)
 {
     assert(msg->size() >= HYPERDEX_HEADER_SIZE_SV);
 
@@ -317,11 +340,11 @@ communication :: send(const virtual_server_id& vto,
 
     if (to == m_daemon->m_us)
     {
-        m_busybee->deliver(to.get(), msg);
+        m_busybee->deliver(to.get(), std::move(msg));
     }
     else
     {
-        busybee_returncode rc = m_busybee->send(to.get(), msg);
+        busybee_returncode rc = m_busybee->send(to.get(), std::move(msg));
 
         switch (rc)
         {
@@ -347,7 +370,7 @@ bool
 communication :: send_exact(const virtual_server_id& from,
                             const virtual_server_id& vto,
                             network_msgtype msg_type,
-                            std::auto_ptr<e::buffer> msg)
+                            std::unique_ptr<e::buffer> msg)
 {
     assert(msg->size() >= HYPERDEX_HEADER_SIZE_VV);
 
@@ -372,11 +395,11 @@ communication :: send_exact(const virtual_server_id& from,
 
     if (to == m_daemon->m_us)
     {
-        m_busybee->deliver(to.get(), msg);
+        m_busybee->deliver(to.get(), std::move(msg));
     }
     else
     {
-        busybee_returncode rc = m_busybee->send(to.get(), msg);
+        busybee_returncode rc = m_busybee->send(to.get(), std::move(msg));
 
         switch (rc)
         {
@@ -404,7 +427,7 @@ communication :: recv(e::garbage_collector::thread_state* ts,
                       virtual_server_id* vfrom,
                       virtual_server_id* vto,
                       network_msgtype* msg_type,
-                      std::auto_ptr<e::buffer>* msg,
+                      std::unique_ptr<e::buffer>* msg,
                       e::unpacker* up)
 {
     // Read messages from the network until we get one that meets the following
@@ -476,7 +499,7 @@ communication :: recv(e::garbage_collector::thread_state* ts,
         // No matter what, wait for the config the sender saw
         if (version > m_daemon->m_config.version())
         {
-            early_message em(version, id, *msg);
+            early_message em(version, id, std::move(*msg));
             m_early_messages.push(em);
             continue;
         }
@@ -499,7 +522,7 @@ communication :: recv(e::garbage_collector::thread_state* ts,
         {
             mt = static_cast<uint8_t>(CONFIGMISMATCH);
             (*msg)->pack_at(BUSYBEE_HEADER_SIZE) << mt;
-            m_busybee->send(id, *msg);
+            m_busybee->send(id, std::move(*msg));
         }
     }
 }

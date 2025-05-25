@@ -80,27 +80,27 @@ class daemon
         void unpause();
         // process messages from the network threads
         void loop(size_t thread);
-        void process_req_get(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_req_get_partial(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_req_atomic(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_req_search_start(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_req_search_next(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_req_search_stop(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_req_sorted_search(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_req_count(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_req_search_describe(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_req_group_atomic(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_chain_op(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_chain_subspace(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_chain_ack(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_xfer_handshake_syn(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_xfer_handshake_synack(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_xfer_handshake_ack(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_xfer_handshake_wiped(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_xfer_op(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_xfer_ack(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_backup(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
-        void process_perf_counters(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::auto_ptr<e::buffer> msg, e::unpacker up);
+        void process_req_get(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_req_get_partial(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_req_atomic(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_req_search_start(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_req_search_next(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_req_search_stop(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_req_sorted_search(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_req_count(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_req_search_describe(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_req_group_atomic(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_chain_op(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_chain_subspace(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_chain_ack(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_xfer_handshake_syn(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_xfer_handshake_synack(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_xfer_handshake_ack(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_xfer_handshake_wiped(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_xfer_op(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_xfer_ack(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_backup(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
+        void process_perf_counters(server_id from, virtual_server_id vfrom, virtual_server_id vto, std::unique_ptr<e::buffer> msg, e::unpacker up);
 
     private:
         void collect_stats();
@@ -125,7 +125,7 @@ class daemon
         std::vector<e::compat::shared_ptr<po6::threads::thread> > m_threads;
         e::garbage_collector m_gc;
         e::garbage_collector::thread_state m_gc_ts;
-        std::auto_ptr<coordinator_link> m_coord;
+        std::unique_ptr<coordinator_link> m_coord;
         std::string m_data_dir;
         datalayer m_data;
         communication m_comm;

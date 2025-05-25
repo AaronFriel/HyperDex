@@ -113,14 +113,14 @@ class search_manager::state
 {
     public:
         state(const region_id& region,
-              std::auto_ptr<e::buffer> msg,
+              std::unique_ptr<e::buffer> msg,
               std::vector<attribute_check>* checks);
         ~state() throw ();
 
     public:
         po6::threads::mutex lock;
         const region_id region;
-        const std::auto_ptr<e::buffer> backing;
+        const std::unique_ptr<e::buffer> backing;
         std::vector<attribute_check> checks;
         e::intrusive_ptr<datalayer::iterator> iter;
 
@@ -136,11 +136,11 @@ class search_manager::state
 };
 
 search_manager :: state :: state(const region_id& r,
-                                 std::auto_ptr<e::buffer> msg,
+                                 std::unique_ptr<e::buffer> msg,
                                  std::vector<attribute_check>* c)
     : lock()
     , region(r)
-    , backing(msg)
+    , backing(std::move(msg))
     , checks()
     , iter()
     , m_ref(0)
@@ -196,7 +196,7 @@ search_manager :: reconfigure(const configuration&,
 void
 search_manager :: start(const server_id& from,
                         const virtual_server_id& to,
-                        std::auto_ptr<e::buffer> msg,
+                        std::unique_ptr<e::buffer> msg,
                         uint64_t nonce,
                         uint64_t search_id,
                         std::vector<attribute_check>* checks)
@@ -218,7 +218,7 @@ search_manager :: start(const server_id& from,
         return;
     }
 
-    e::intrusive_ptr<state> st = new state(ri, msg, checks);
+    e::intrusive_ptr<state> st = new state(ri, std::move(msg), checks);
     std::stable_sort(st->checks.begin(), st->checks.end());
     datalayer::returncode rc = datalayer::SUCCESS;
     datalayer::snapshot snap = m_daemon->m_data.make_snapshot();
@@ -256,9 +256,9 @@ search_manager :: next(const server_id& from,
 
     if (!m_searches.lookup(sid, &st))
     {
-        std::auto_ptr<e::buffer> msg(e::buffer::create(HYPERDEX_HEADER_SIZE_VC + sizeof(uint64_t)));
+        std::unique_ptr<e::buffer> msg(e::buffer::create(HYPERDEX_HEADER_SIZE_VC + sizeof(uint64_t)));
         msg->pack_at(HYPERDEX_HEADER_SIZE_VC) << nonce;
-        m_daemon->m_comm.send_client(to, from, RESP_SEARCH_DONE, msg);
+        m_daemon->m_comm.send_client(to, from, RESP_SEARCH_DONE, std::move(msg));
         return;
     }
 
@@ -275,16 +275,16 @@ search_manager :: next(const server_id& from,
                   + sizeof(uint64_t)
                   + pack_size(key)
                   + pack_size(val);
-        std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+        std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
         msg->pack_at(HYPERDEX_HEADER_SIZE_VC) << nonce << key << val;
-        m_daemon->m_comm.send_client(to, from, RESP_SEARCH_ITEM, msg);
+        m_daemon->m_comm.send_client(to, from, RESP_SEARCH_ITEM, std::move(msg));
         st->iter->next();
     }
     else
     {
-        std::auto_ptr<e::buffer> msg(e::buffer::create(HYPERDEX_HEADER_SIZE_VC + sizeof(uint64_t)));
+        std::unique_ptr<e::buffer> msg(e::buffer::create(HYPERDEX_HEADER_SIZE_VC + sizeof(uint64_t)));
         msg->pack_at(HYPERDEX_HEADER_SIZE_VC) << nonce;
-        m_daemon->m_comm.send_client(to, from, RESP_SEARCH_DONE, msg);
+        m_daemon->m_comm.send_client(to, from, RESP_SEARCH_DONE, std::move(msg));
         stop(from, to, search_id);
     }
 }
@@ -489,7 +489,7 @@ search_manager :: sorted_search(const server_id& from,
         sz += pack_size(top_n[i].key) + pack_size(top_n[i].value);
     }
 
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     e::packer pa = msg->pack_at(HYPERDEX_HEADER_SIZE_VC);
     pa = pa << nonce << static_cast<uint64_t>(top_n.size());
 
@@ -498,7 +498,7 @@ search_manager :: sorted_search(const server_id& from,
         pa = pa << top_n[i].key << top_n[i].value;
     }
 
-    m_daemon->m_comm.send_client(to, from, RESP_SORTED_SEARCH, msg);
+    m_daemon->m_comm.send_client(to, from, RESP_SORTED_SEARCH, std::move(msg));
 }
 
 void
@@ -552,14 +552,14 @@ search_manager :: group_keyop(const server_id& from,
                   + sizeof(uint64_t)
                   + pack_size(key)
                   + remain.size();
-        std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+        std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
         msg->pack_at(HYPERDEX_HEADER_SIZE_SV)
             << uint64_t(0) << key << e::pack_memmove(remain.data(), remain.size());
         virtual_server_id vsi = m_daemon->m_config.point_leader(ri, key);
 
         if (vsi != virtual_server_id())
         {
-            m_daemon->m_comm.send(vsi, mt, msg);
+            m_daemon->m_comm.send(vsi, mt, std::move(msg));
             result++;
         }
 
@@ -569,9 +569,9 @@ search_manager :: group_keyop(const server_id& from,
     size_t sz = HYPERDEX_HEADER_SIZE_VC
               + sizeof(uint64_t)
               + sizeof(uint64_t);
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     msg->pack_at(HYPERDEX_HEADER_SIZE_VC) << nonce << result;
-    m_daemon->m_comm.send_client(to, from, resp, msg);
+    m_daemon->m_comm.send_client(to, from, resp, std::move(msg));
 }
 
 void
@@ -620,9 +620,9 @@ search_manager :: count(const server_id& from,
     size_t sz = HYPERDEX_HEADER_SIZE_VC
               + sizeof(uint64_t)
               + sizeof(uint64_t);
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     msg->pack_at(HYPERDEX_HEADER_SIZE_VC) << nonce << result;
-    m_daemon->m_comm.send_client(to, from, RESP_COUNT, msg);
+    m_daemon->m_comm.send_client(to, from, RESP_COUNT, std::move(msg));
 }
 
 void
@@ -685,10 +685,10 @@ search_manager :: search_describe(const server_id& from,
     size_t sz = HYPERDEX_HEADER_SIZE_VC
               + sizeof(uint64_t)
               + text_sz;
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     msg->pack_at(HYPERDEX_HEADER_SIZE_VC)
         << nonce << e::pack_memmove(text, text_sz);
-    m_daemon->m_comm.send_client(to, from, RESP_SEARCH_DESCRIBE, msg);
+    m_daemon->m_comm.send_client(to, from, RESP_SEARCH_DESCRIBE, std::move(msg));
 }
 
 uint64_t

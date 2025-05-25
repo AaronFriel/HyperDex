@@ -232,8 +232,8 @@ void
 replication_manager :: client_atomic(const server_id& from,
                                      const virtual_server_id& to,
                                      uint64_t nonce,
-                                     std::auto_ptr<key_change> kc,
-                                     std::auto_ptr<e::buffer> backing)
+                                     std::unique_ptr<key_change> kc,
+                                     std::unique_ptr<e::buffer> backing)
 {
     const region_id ri(m_daemon->m_config.get_region_id(to));
     const schema& sc(*m_daemon->m_config.get_schema(ri));
@@ -262,7 +262,7 @@ replication_manager :: client_atomic(const server_id& from,
 
     key_map_t::state_reference ksr;
     key_state* ks = get_or_create_key_state(ri, kc->key, &ksr);
-    ks->enqueue_client_atomic(this, to, sc, from, nonce, kc, backing);
+    ks->enqueue_client_atomic(this, to, sc, from, nonce, std::move(kc), std::move(backing));
 }
 
 void
@@ -274,7 +274,7 @@ replication_manager :: chain_op(const virtual_server_id& from,
                                 bool has_value,
                                 const e::slice& key,
                                 const std::vector<e::slice>& value,
-                                std::auto_ptr<e::buffer> backing)
+                                std::unique_ptr<e::buffer> backing)
 {
     const region_id ri(m_daemon->m_config.get_region_id(to));
     const schema& sc(*m_daemon->m_config.get_schema(ri));
@@ -299,7 +299,7 @@ replication_manager :: chain_op(const virtual_server_id& from,
 
     key_map_t::state_reference ksr;
     key_state* ks = get_or_create_key_state(ri, key, &ksr);
-    ks->enqueue_chain_op(this, to, sc, from, old_version, new_version, fresh, has_value, value, backing);
+    ks->enqueue_chain_op(this, to, sc, from, old_version, new_version, fresh, has_value, value, std::move(backing));
 }
 
 void
@@ -309,7 +309,7 @@ replication_manager :: chain_subspace(const virtual_server_id& from,
                                       uint64_t new_version,
                                       const e::slice& key,
                                       const std::vector<e::slice>& value,
-                                      std::auto_ptr<e::buffer> backing,
+                                      std::unique_ptr<e::buffer> backing,
                                       const region_id& prev_region,
                                       const region_id& this_old_region,
                                       const region_id& this_new_region,
@@ -333,7 +333,7 @@ replication_manager :: chain_subspace(const virtual_server_id& from,
 
     key_map_t::state_reference ksr;
     key_state* ks = get_or_create_key_state(ri, key, &ksr);
-    ks->enqueue_chain_subspace(this, to, sc, from, old_version, new_version, value, backing,
+    ks->enqueue_chain_subspace(this, to, sc, from, old_version, new_version, value, std::move(backing),
                                prev_region, this_old_region, this_new_region, next_region);
 }
 
@@ -479,10 +479,10 @@ replication_manager :: respond_to_client(const virtual_server_id& us,
     size_t sz = HYPERDEX_HEADER_SIZE_VC
               + sizeof(uint64_t)
               + sizeof(uint16_t);
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     uint16_t result = static_cast<uint16_t>(ret);
     msg->pack_at(HYPERDEX_HEADER_SIZE_VC) << nonce << result;
-    m_daemon->m_comm.send_client(us, client, RESP_ATOMIC, msg);
+    m_daemon->m_comm.send_client(us, client, RESP_ATOMIC, std::move(msg));
 }
 
 bool
@@ -582,7 +582,7 @@ replication_manager :: send_message(const virtual_server_id& us,
         abort();
     }
 
-    std::auto_ptr<e::buffer> msg;
+    std::unique_ptr<e::buffer> msg;
 
     if (type == CHAIN_OP)
     {
@@ -625,7 +625,7 @@ replication_manager :: send_message(const virtual_server_id& us,
     }
 
     op->set_sent(m_daemon->m_config.version(), dest);
-    return m_daemon->m_comm.send_exact(us, dest, type, msg);
+    return m_daemon->m_comm.send_exact(us, dest, type, std::move(msg));
 }
 
 bool
@@ -639,9 +639,9 @@ replication_manager :: send_ack(const virtual_server_id& us,
     }
 
     size_t sz = HYPERDEX_HEADER_SIZE_VV + sizeof(uint64_t) + pack_size(key);
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     msg->pack_at(HYPERDEX_HEADER_SIZE_VV) << op->this_version() << key;
-    return m_daemon->m_comm.send_exact(us, op->recv_from(), CHAIN_ACK, msg);
+    return m_daemon->m_comm.send_exact(us, op->recv_from(), CHAIN_ACK, std::move(msg));
 }
 
 void

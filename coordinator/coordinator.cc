@@ -1038,7 +1038,7 @@ coordinator*
 coordinator :: recreate(rsm_context* ctx,
                         const char* data, size_t data_sz)
 {
-    std::auto_ptr<coordinator> c(new coordinator());
+    std::unique_ptr<coordinator> c(new coordinator());
 
     if (!c.get())
     {
@@ -1153,7 +1153,7 @@ coordinator :: snapshot(rsm_context* /*ctx*/,
         sz += pack_size(name) + pack_size(*it->second);
     }
 
-    std::auto_ptr<e::buffer> buf(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> buf(e::buffer::create(sz));
     e::packer pa = buf->pack_at(0);
     pa = pa << m_cluster << m_counter << m_version << m_flags << m_servers
             << m_permutation << m_spares << m_desired_spares << m_intents

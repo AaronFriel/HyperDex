@@ -89,10 +89,10 @@ pending_perf_counters :: send_perf_reqs(admin* adm,
         }
 
         size_t sz = HYPERDEX_ADMIN_HEADER_SIZE_REQ + sizeof(uint64_t);
-        std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+        std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
         msg->pack_at(HYPERDEX_ADMIN_HEADER_SIZE_REQ) << when;
 
-        if (!adm->send(PERF_COUNTERS, addrs[i].first, nonce, msg, this, status))
+        if (!adm->send(PERF_COUNTERS, addrs[i].first, nonce, std::move(msg), this, status))
         {
             ++failed;
         }
@@ -174,7 +174,7 @@ bool
 pending_perf_counters :: handle_message(admin*,
                                         const server_id& si,
                                         network_msgtype mt,
-                                        std::auto_ptr<e::buffer>,
+                                        std::unique_ptr<e::buffer>,
                                         e::unpacker up,
                                         hyperdex_admin_returncode* status)
 {

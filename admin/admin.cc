@@ -261,7 +261,7 @@ admin :: add_space(const char* description,
         return -1;
     }
 
-    std::auto_ptr<e::buffer> msg(e::buffer::create(pack_size(space)));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(pack_size(space)));
     msg->pack_at(0) << space;
 
     int64_t id = m_next_admin_id;
@@ -461,7 +461,7 @@ admin :: server_register(uint64_t token, const char* address,
     int64_t id = m_next_admin_id;
     ++m_next_admin_id;
     e::intrusive_ptr<coord_rpc> op = new coord_rpc_generic(id, status, "register server");
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sizeof(uint64_t) + pack_size(loc)));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sizeof(uint64_t) + pack_size(loc)));
     msg->pack() << sid << loc;
     int64_t cid = rpc("server_register", reinterpret_cast<const char*>(msg->data()), msg->size(),
                       &op->repl_status, &op->repl_output, &op->repl_output_sz);
@@ -650,7 +650,7 @@ admin :: raw_backup(const server_id& sid, const char* name,
     e::slice name_s(name, strlen(name) + 1);
     size_t sz = HYPERDEX_ADMIN_HEADER_SIZE_REQ
               + pack_size(name_s);
-    std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+    std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
     msg->pack_at(HYPERDEX_ADMIN_HEADER_SIZE_REQ) << name_s;
     uint64_t id = m_next_admin_id;
     ++m_next_admin_id;
@@ -658,7 +658,7 @@ admin :: raw_backup(const server_id& sid, const char* name,
     ++m_next_server_nonce;
     e::intrusive_ptr<pending> op = new pending_raw_backup(id, status, path);
 
-    if (!send(BACKUP, sid, nonce, msg, op, status))
+    if (!send(BACKUP, sid, nonce, std::move(msg), op, status))
     {
         return -1;
     }
@@ -835,7 +835,7 @@ admin :: loop(int timeout, hyperdex_admin_returncode* status)
         }
 
         uint64_t sid_num;
-        std::auto_ptr<e::buffer> msg;
+        std::unique_ptr<e::buffer> msg;
         busybee_returncode rc = m_busybee->recv(recv_timeout, &sid_num, &msg);
         server_id id(sid_num);
 
@@ -904,7 +904,7 @@ admin :: loop(int timeout, hyperdex_admin_returncode* status)
         {
             m_server_ops.erase(it);
 
-            if (!op->handle_message(this, id, msg_type, msg, up, status))
+            if (!op->handle_message(this, id, msg_type, std::move(msg), up, status))
             {
                 return -1;
             }
@@ -1067,7 +1067,7 @@ bool
 admin :: send(network_msgtype mt,
               server_id id,
               uint64_t nonce,
-              std::auto_ptr<e::buffer> msg,
+              std::unique_ptr<e::buffer> msg,
               e::intrusive_ptr<pending> op,
               hyperdex_admin_returncode* status)
 {
@@ -1076,7 +1076,7 @@ admin :: send(network_msgtype mt,
     const uint64_t version = m_config.version();
     msg->pack_at(BUSYBEE_HEADER_SIZE)
         << type << flags << version << uint64_t(UINT64_MAX) << nonce;
-    switch (m_busybee->send(id.get(), msg))
+    switch (m_busybee->send(id.get(), std::move(msg)))
     {
         case BUSYBEE_SUCCESS:
             op->handle_sent_to(id);

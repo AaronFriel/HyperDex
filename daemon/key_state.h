@@ -63,8 +63,8 @@ class key_state
                                    const schema& sc,
                                    const server_id& from,
                                    uint64_t nonce,
-                                   std::auto_ptr<key_change> kc,
-                                   std::auto_ptr<e::buffer> backing);
+                                   std::unique_ptr<key_change> kc,
+                                   std::unique_ptr<e::buffer> backing);
         void enqueue_chain_op(replication_manager* rm,
                               const virtual_server_id& us,
                               const schema& sc,
@@ -74,7 +74,7 @@ class key_state
                               bool fresh,
                               bool has_value,
                               const std::vector<e::slice>& value,
-                              std::auto_ptr<e::buffer> backing);
+                              std::unique_ptr<e::buffer> backing);
         void enqueue_chain_subspace(replication_manager* rm,
                                     const virtual_server_id& us,
                                     const schema& sc,
@@ -82,7 +82,7 @@ class key_state
                                     uint64_t old_version,
                                     uint64_t new_version,
                                     const std::vector<e::slice>& value,
-                                    std::auto_ptr<e::buffer> backing,
+                                    std::unique_ptr<e::buffer> backing,
                                     const region_id& prev_region,
                                     const region_id& this_old_region,
                                     const region_id& this_new_region,
@@ -137,8 +137,8 @@ class key_state
                               const schema& sc,
                               const server_id& from,
                               uint64_t nonce,
-                              std::auto_ptr<key_change> kc,
-                              std::auto_ptr<e::buffer> backing);
+                              std::unique_ptr<key_change> kc,
+                              std::unique_ptr<e::buffer> backing);
         void do_chain_op(replication_manager* rm,
                          const virtual_server_id& us,
                          const schema& sc,
@@ -148,7 +148,7 @@ class key_state
                          bool fresh,
                          bool has_value,
                          const std::vector<e::slice>& value,
-                         std::auto_ptr<e::buffer> backing);
+                         std::unique_ptr<e::buffer> backing);
         void do_chain_subspace(replication_manager* rm,
                                const virtual_server_id& us,
                                const schema& sc,
@@ -156,7 +156,7 @@ class key_state
                                uint64_t old_version,
                                uint64_t new_version,
                                const std::vector<e::slice>& value,
-                               std::auto_ptr<e::buffer> backing,
+                               std::unique_ptr<e::buffer> backing,
                                const region_id& prev_region,
                                const region_id& this_old_region,
                                const region_id& this_new_region,
@@ -176,12 +176,12 @@ class key_state
                                       bool fresh,
                                       bool has_value,
                                       const std::vector<e::slice>& value,
-                                      std::auto_ptr<e::arena> memory);
+                                      std::unique_ptr<e::arena> memory);
         e::intrusive_ptr<key_operation>
             enqueue_discontinuous_key_op(uint64_t old_version,
                                          uint64_t new_version,
                                          const std::vector<e::slice>& value,
-                                         std::auto_ptr<e::arena> memory,
+                                         std::unique_ptr<e::arena> memory,
                                          const region_id& prev_region,
                                          const region_id& this_old_region,
                                          const region_id& this_new_region,

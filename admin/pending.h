@@ -58,7 +58,7 @@ class pending : public yieldable
         virtual bool handle_message(admin* cl,
                                     const server_id& si,
                                     network_msgtype mt,
-                                    std::auto_ptr<e::buffer> msg,
+                                    std::unique_ptr<e::buffer> msg,
                                     e::unpacker up,
                                     hyperdex_admin_returncode* status) = 0;
 

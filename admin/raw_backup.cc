@@ -64,7 +64,7 @@ hyperdex_admin_raw_backup(const char* host, uint16_t port,
             return -1;
         }
 
-        std::auto_ptr<busybee_single> bbs(busybee_single::create(loc));
+        std::unique_ptr<busybee_single> bbs(busybee_single::create(loc));
         const uint8_t type = static_cast<uint8_t>(BACKUP);
         const uint8_t flags = 0;
         const uint64_t version = 0;
@@ -79,10 +79,10 @@ hyperdex_admin_raw_backup(const char* host, uint16_t port,
                   + sizeof(uint64_t) /*vidt*/
                   + sizeof(uint64_t) /*nonce*/
                   + pack_size(name_s);
-        std::auto_ptr<e::buffer> msg(e::buffer::create(sz));
+        std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
         e::packer pa = msg->pack_at(BUSYBEE_HEADER_SIZE);
         pa = pa << type << flags << version << to << nonce << name_s;
-        switch (bbs->send(msg))
+        switch (bbs->send(std::move(msg)))
         {
             case BUSYBEE_SUCCESS:
                 break;

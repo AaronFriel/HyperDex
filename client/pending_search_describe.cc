@@ -93,12 +93,12 @@ pending_search_describe :: handle_message(client* cl,
                                           const server_id& si,
                                           const virtual_server_id& vsi,
                                           network_msgtype mt,
-                                          std::auto_ptr<e::buffer>,
+                                          std::unique_ptr<e::buffer>,
                                           e::unpacker up,
                                           hyperdex_client_returncode* status,
                                           e::error* err)
 {
-    bool handled = pending_aggregation::handle_message(cl, si, vsi, mt, std::auto_ptr<e::buffer>(), up, status, err);
+    bool handled = pending_aggregation::handle_message(cl, si, vsi, mt, std::unique_ptr<e::buffer>(), up, status, err);
     assert(handled);
 
     *status = HYPERDEX_CLIENT_SUCCESS;

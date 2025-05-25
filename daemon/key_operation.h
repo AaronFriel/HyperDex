@@ -49,7 +49,7 @@ class key_operation
                       bool fresh,
                       bool has_value,
                       const std::vector<e::slice>& value,
-                      std::auto_ptr<e::arena> memory);
+                      std::unique_ptr<e::arena> memory);
         ~key_operation() throw ();
 
     public:
@@ -118,7 +118,7 @@ class key_operation
         virtual_server_id m_sent; // we sent to here
 
         const std::vector<e::slice> m_value;
-        const std::auto_ptr<e::arena> m_memory;
+        const std::unique_ptr<e::arena> m_memory;
 
         enum { UNKNOWN, CONTINUOUS, DISCONTINUOUS } m_type;
         region_id m_this_old_region;
