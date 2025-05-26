@@ -1,0 +1,44 @@
+name: bump-patch-and-release
+on:
+  push:
+    branches: [main]
+
+permissions: { contents: write }
+
+concurrency:
+  group: release
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const semver = require('semver');
+
+            /* 1. Get previous release’s tag (404 if none) */
+            let prev = 'v0.0.0';
+            try {
+              const r = await github.rest.repos.getLatestRelease(context.repo);
+              prev = r.data.tag_name;
+            } catch (e) {
+              if (e.status !== 404) throw e;
+            }
+
+            const next = 'v' + semver.inc(prev.replace(/^v/, ''), 'patch');
+            core.notice(`Next tag: ${next}`);
+
+            /* 2. Create release (GitHub auto-creates a lightweight tag) */
+            await github.rest.repos.createRelease({
+              ...context.repo,
+              tag_name:          next,
+              target_commitish:  context.sha,
+              name:              next,
+              generate_release_notes: true,
+              draft:             true
+            });
+
+            core.notice(`🎉 Published ${next} (tag + release)`);
