@@ -88,6 +88,7 @@ hyperdex: po6 e busybee HyperLevelDB libmacaroons libtreadstone Replicant
 	cd .. && autoreconf -i
 	rm -rf ../target && mkdir -p ../target
 	cd ../target && ../configure --prefix="$(pwd)/install"
+	mkdir -p ../target/man
 	$(MAKE) -C ../target -j$(THREADS)
 	$(MAKE) -C ../target check
 	$(MAKE) -C ../target install
