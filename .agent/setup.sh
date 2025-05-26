@@ -14,7 +14,12 @@ function setup_deps {
     return $exit_code
 }
 
-if setup_deps; then
+setup_deps
+status=$?
+
+if [ $status -eq 0 ]; then
     echo "Dependencies set up, clearing log file to avoid confusing the agent."
     > "$setup_deps_output"
 fi
+
+exit $status
