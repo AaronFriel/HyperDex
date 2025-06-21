@@ -7,10 +7,21 @@ on:
   pull_request:
 
 jobs:
-  build:
+  lint-actions:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Run setup and tests
-      run: sudo ./.agent/setup.sh
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: stable
+      - name: Lint GitHub Actions
+        run: make -C .agent lint-actions
+
+  setup:
+    runs-on: ubuntu-latest
+    needs: lint-actions
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run setup and tests
+        run: sudo ./.agent/setup.sh
 

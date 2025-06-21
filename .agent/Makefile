@@ -7,7 +7,7 @@ endif
 	    po6_clone e_clone busybee_clone HyperLevelDB_clone \
 	    libmacaroons_clone libtreadstone_clone Replicant_clone \
 	    po6 e busybee HyperLevelDB libmacaroons libtreadstone Replicant \
-	    hyperdex
+	    hyperdex lint-actions
 
 all: hyperdex
 
@@ -91,3 +91,9 @@ hyperdex: po6 e busybee HyperLevelDB libmacaroons libtreadstone Replicant
 	$(MAKE) -C ../target -j$(THREADS)
 	$(MAKE) -C ../target check
 	$(MAKE) -C ../target install
+
+lint-actions:
+	@echo "Installing actionlint"
+	go install github.com/rhysd/actionlint/cmd/actionlint@latest
+	@echo "Running actionlint"
+	"$(shell go env GOPATH)/bin/actionlint" -ignore 'too old to run on GitHub Actions'
