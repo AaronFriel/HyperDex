@@ -96,4 +96,4 @@ lint-actions:
 	@echo "Installing actionlint"
 	go install github.com/rhysd/actionlint/cmd/actionlint@latest
 	@echo "Running actionlint"
-	"$(shell go env GOPATH)/bin/actionlint" -ignore 'too old to run on GitHub Actions'
+	"$(shell go env GOPATH)/bin/actionlint"
