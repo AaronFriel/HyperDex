@@ -59,7 +59,7 @@ jobs:
       run: |
         TAG=${{ steps.bump.outputs.next }}
         tar -czf hyperdex-${TAG}-linux-amd64.tar.gz -C target/install .
-        echo "tarball=hyperdex-${TAG}-linux-amd64.tar.gz" >> $GITHUB_OUTPUT
+        echo "tarball=hyperdex-${TAG}-linux-amd64.tar.gz" >> "$GITHUB_OUTPUT"
 
     - name: Tag & create release
       id: release
