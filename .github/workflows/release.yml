@@ -48,8 +48,7 @@ jobs:
 
     - name: Bootstrap build environment
       run: |
-        chmod +x .agent/setup.sh
-        sudo bash .agent/setup.sh
+        bash .agent/setup.sh
 
     - name: Build HyperDex
       run: make -C .agent hyperdex
