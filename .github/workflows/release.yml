@@ -1,7 +1,13 @@
-name: bump-patch-and-release
+name: build-bump-and-release
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      commitish:
+        description: 'Commit SHA (leave blank for HEAD of main)'
+        required: false
+  pull_request:
 
 permissions: { contents: write }
 
@@ -12,33 +18,66 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     steps:
-      - uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const semver = require('semver');
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.inputs.commitish || github.sha }}
 
-            /* 1. Get previous release’s tag (404 if none) */
-            let prev = 'v0.0.0';
-            try {
-              const r = await github.rest.repos.getLatestRelease(context.repo);
-              prev = r.data.tag_name;
-            } catch (e) {
-              if (e.status !== 404) throw e;
-            }
+    - name: Compute next semantic-patch tag
+      id: bump
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        result-encoding: string
+        script: |
+          let prev = 'v0.0.0';
+          try {
+            const rel = await github.rest.repos.getLatestRelease(context.repo);
+            prev = rel.data.tag_name;
+          } catch (e) {
+            if (e.status !== 404) throw e;
+          }
+          const [maj = 0, min = 0, patch = 0] = prev.replace(/^v/, '').split('.').map(Number);
+          const next = `v${maj}.${min}.${patch + 1}`;
+          core.setOutput('next', next);
 
-            const next = 'v' + semver.inc(prev.replace(/^v/, ''), 'patch');
-            core.notice(`Next tag: ${next}`);
+    - name: Bootstrap build environment
+      run: bash .agent/setup.sh
 
-            /* 2. Create release (GitHub auto-creates a lightweight tag) */
-            await github.rest.repos.createRelease({
-              ...context.repo,
-              tag_name:          next,
-              target_commitish:  context.sha,
-              name:              next,
-              generate_release_notes: true,
-              draft:             true
-            });
+    - name: Build HyperDex
+      run: make -C .agent hyperdex
 
-            core.notice(`🎉 Published ${next} (tag + release)`);
+    - name: Create release tarball
+      id: pack
+      run: |
+        TAG=${{ steps.bump.outputs.next }}
+        tar -czf "hyperdex-${TAG}-linux-amd64.tar.gz" -C target/install .
+        echo "tarball=hyperdex-${TAG}-linux-amd64.tar.gz" >> "$GITHUB_OUTPUT"
+
+    - name: Tag & create release
+      id: release
+      env:
+        TAG: ${{ steps.bump.outputs.next }}
+        TARBALL: ${{ steps.pack.outputs.tarball }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        EVENT_NAME: ${{ github.event_name }}
+      run: |
+        git config user.name  "GitHub Actions"
+        git config user.email "actions@github.com"
+        if [ "$EVENT_NAME" != "pull_request" ]; then
+          git tag "$TAG"
+          git push origin "$TAG"
+          DRAFT_FLAG="--draft=false"
+        else
+          DRAFT_FLAG="--draft"
+        fi
+        gh release create "$TAG" \
+          --title "HyperDex $TAG" \
+          --notes "Automated build of HyperDex $TAG" \
+          --verify-tag \
+          $DRAFT_FLAG \
+          "$TARBALL"
