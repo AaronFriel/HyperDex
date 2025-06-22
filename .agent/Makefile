@@ -3,6 +3,10 @@ ifeq ($(shell [ $(THREADS) -gt 8 ] && echo yes),yes)
 THREADS := 8
 endif
 
+PREFIX ?= $(CURDIR)/../target/install
+CONFIGURE_ENV = PKG_CONFIG_PATH="$(PREFIX)/lib/pkgconfig" \
+               CPPFLAGS="-I$(PREFIX)/include" LDFLAGS="-L$(PREFIX)/lib"
+
 .PHONY: all clones \
 	    po6_clone e_clone busybee_clone HyperLevelDB_clone \
 	    libmacaroons_clone libtreadstone_clone Replicant_clone \
@@ -22,7 +26,7 @@ po6_clone:
 	fi
 
 po6: po6_clone
-	cd po6 && autoreconf -i && ./configure && make -j$(THREADS) && make install && ldconfig
+	cd po6 && autoreconf -i && $(CONFIGURE_ENV) ./configure --prefix="$(PREFIX)" --libdir="$(PREFIX)/lib" && make -j$(THREADS) && make install
 
 e_clone:
 	@if [ -d e/.git ]; then \
@@ -32,7 +36,7 @@ e_clone:
 	fi
 
 e: po6 e_clone
-	cd e && autoreconf -i && ./configure && make -j$(THREADS) && make install && ldconfig
+	cd e && autoreconf -i && $(CONFIGURE_ENV) ./configure --prefix="$(PREFIX)" --libdir="$(PREFIX)/lib" && make -j$(THREADS) && make install
 
 busybee_clone:
 	@if [ -d busybee/.git ]; then \
@@ -42,7 +46,7 @@ busybee_clone:
 	fi
 
 busybee: e busybee_clone
-	cd busybee && autoreconf -i && ./configure && make -j$(THREADS) && make install && ldconfig
+	cd busybee && autoreconf -i && $(CONFIGURE_ENV) ./configure --prefix="$(PREFIX)" --libdir="$(PREFIX)/lib" && make -j$(THREADS) && make install
 
 HyperLevelDB_clone:
 	@if [ -d HyperLevelDB/.git ]; then \
@@ -52,7 +56,7 @@ HyperLevelDB_clone:
 	fi
 
 HyperLevelDB: HyperLevelDB_clone
-	cd HyperLevelDB && autoreconf -i && ./configure && make -j$(THREADS) && make install && ldconfig
+	cd HyperLevelDB && autoreconf -i && $(CONFIGURE_ENV) ./configure --prefix="$(PREFIX)" --libdir="$(PREFIX)/lib" && make -j$(THREADS) && make install
 
 libmacaroons_clone:
 	@if [ -d libmacaroons/.git ]; then \
@@ -62,7 +66,7 @@ libmacaroons_clone:
 	fi
 
 libmacaroons: libmacaroons_clone
-	cd libmacaroons && autoreconf -i && ./configure && make -j$(THREADS) && make install && ldconfig
+	cd libmacaroons && autoreconf -i && $(CONFIGURE_ENV) ./configure --prefix="$(PREFIX)" --libdir="$(PREFIX)/lib" && make -j$(THREADS) && make install
 
 libtreadstone_clone:
 	@if [ -d libtreadstone/.git ]; then \
@@ -72,7 +76,7 @@ libtreadstone_clone:
 	fi
 
 libtreadstone: po6 e libtreadstone_clone
-	cd libtreadstone && autoreconf -i && ./configure && make -j$(THREADS) && make install && ldconfig
+	cd libtreadstone && autoreconf -i && $(CONFIGURE_ENV) ./configure --prefix="$(PREFIX)" --libdir="$(PREFIX)/lib" && make -j$(THREADS) && make install
 
 Replicant_clone:
 	@if [ -d Replicant/.git ]; then \
@@ -82,14 +86,14 @@ Replicant_clone:
 	fi
 
 Replicant: busybee Replicant_clone
-	cd Replicant && autoreconf -i && ./configure && make -j$(THREADS) && make install && ldconfig
+	cd Replicant && autoreconf -i && $(CONFIGURE_ENV) ./configure --prefix="$(PREFIX)" --libdir="$(PREFIX)/lib" && make -j$(THREADS) && make install
 
 hyperdex: po6 e busybee HyperLevelDB libmacaroons libtreadstone Replicant
 	cd .. && autoreconf -i
-	rm -rf ../target && mkdir -p ../target
-	cd ../target && ../configure --prefix="$(pwd)/install"
+	rm -rf ../target && mkdir -p ../target/man
+	cd ../target && $(CONFIGURE_ENV) ../configure --prefix="$(pwd)/install" --libdir="$(pwd)/install/lib"
 	$(MAKE) -C ../target -j$(THREADS)
-	$(MAKE) -C ../target check
+	LD_LIBRARY_PATH="$(PREFIX)/lib:$$LD_LIBRARY_PATH" $(MAKE) -C ../target check
 	$(MAKE) -C ../target install
 
 lint-actions:
