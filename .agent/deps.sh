@@ -3,8 +3,8 @@
 set -euo pipefail
 set -x
 
-apt update -y
-apt install -y build-essential autoconf automake libtool pkg-config \
+sudo apt update -y
+sudo apt install -y build-essential autoconf automake libtool pkg-config \
     libgoogle-glog-dev libleveldb-dev libpopt-dev \
     libgtest-dev python-dev-is-python3 swig default-jdk flex bison cython3 gperf \
     libsparsehash-dev pandoc \
