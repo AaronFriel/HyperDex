@@ -8,13 +8,16 @@ export LD_LIBRARY_PATH := $(PREFIX)/lib:$(LD_LIBRARY_PATH)
 export CFLAGS := -I$(PREFIX)/include $(CFLAGS)
 export LDFLAGS := -L$(PREFIX)/lib $(LDFLAGS)
 
-.PHONY: all clones \
+.PHONY: all check clones \
 	    po6_clone e_clone busybee_clone HyperLevelDB_clone \
 	    libmacaroons_clone libtreadstone_clone Replicant_clone \
 	    po6 e busybee HyperLevelDB libmacaroons libtreadstone Replicant \
 	    hyperdex lint-actions
 
 all: hyperdex
+
+check:
+	./check.sh
 
 clones: po6_clone e_clone busybee_clone HyperLevelDB_clone \
 	    libmacaroons_clone libtreadstone_clone Replicant_clone
@@ -98,7 +101,4 @@ hyperdex: po6 e busybee HyperLevelDB libmacaroons libtreadstone Replicant
 	$(MAKE) -C ../target install dist_man_MANS=
 
 lint-actions:
-	@echo "Installing actionlint"
-	go install github.com/rhysd/actionlint/cmd/actionlint@latest
-	@echo "Running actionlint"
-	"$(shell go env GOPATH)/bin/actionlint"
+	../scripts/check-actions.sh
