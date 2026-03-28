@@ -92,10 +92,10 @@ Replicant: busybee Replicant_clone
 hyperdex: po6 e busybee HyperLevelDB libmacaroons libtreadstone Replicant
 	cd .. && autoreconf -i
 	mkdir -p ../target/man
-	cd ../target && ../configure --prefix="$(pwd)/install"
+	cd ../target && ../configure --prefix="$$PWD/install"
 	$(MAKE) -C ../target -j$(THREADS)
 	$(MAKE) -C ../target check
-	$(MAKE) -C ../target install
+	$(MAKE) -C ../target install dist_man_MANS=
 
 lint-actions:
 	@echo "Installing actionlint"

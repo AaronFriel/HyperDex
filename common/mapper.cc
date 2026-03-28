@@ -39,9 +39,8 @@ mapper :: ~mapper() throw ()
 {
 }
 
-bool
-mapper :: lookup(uint64_t id, po6::net::location* addr)
+po6::net::location
+mapper :: lookup(uint64_t id)
 {
-    *addr = m_config->get_address(server_id(id));
-    return *addr != po6::net::location();
+    return m_config->get_address(server_id(id));
 }

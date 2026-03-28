@@ -39,6 +39,7 @@
 // HyperDex
 #include <hyperdex/admin.h>
 #include "visibility.h"
+#include "common/busybee_buffer.h"
 #include "common/ids.h"
 #include "common/network_msgtype.h"
 #include "common/network_returncode.h"
@@ -82,7 +83,7 @@ hyperdex_admin_raw_backup(const char* host, uint16_t port,
         std::unique_ptr<e::buffer> msg(e::buffer::create(sz));
         e::packer pa = msg->pack_at(BUSYBEE_HEADER_SIZE);
         pa = pa << type << flags << version << to << nonce << name_s;
-        switch (bbs->send(std::move(msg)))
+        switch (bbs->send(busybee_auto_ptr(std::move(msg))))
         {
             case BUSYBEE_SUCCESS:
                 break;
@@ -102,9 +103,12 @@ hyperdex_admin_raw_backup(const char* host, uint16_t port,
                 abort();
         }
 
-        switch (bbs->recv(-1, &msg))
+        std::unique_ptr<e::buffer> bbmsg;
+
+        switch (bbs->recv(-1, &bbmsg))
         {
             case BUSYBEE_SUCCESS:
+                msg = std::move(bbmsg);
                 break;
             case BUSYBEE_TIMEOUT:
                 *status = HYPERDEX_ADMIN_TIMEOUT;

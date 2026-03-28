@@ -146,7 +146,18 @@ locate_coordinator_lib(const char* argv0, std::string* path)
 
         if (stat(paths[idx].c_str(), &buf) == 0)
         {
-            *path = paths[idx];
+            char realbuf[PATH_MAX + 1];
+            memset(realbuf, 0, sizeof(realbuf));
+
+            if (realpath(paths[idx].c_str(), realbuf) != NULL)
+            {
+                *path = realbuf;
+            }
+            else
+            {
+                *path = paths[idx];
+            }
+
             return true;
         }
 

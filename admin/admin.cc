@@ -39,6 +39,7 @@
 // HyperDex
 #include <hyperdex/hyperspace_builder.h>
 #include "visibility.h"
+#include "common/busybee_buffer.h"
 #include "common/macros.h"
 #include "common/serialization.h"
 #include "admin/admin.h"
@@ -835,8 +836,8 @@ admin :: loop(int timeout, hyperdex_admin_returncode* status)
         }
 
         uint64_t sid_num;
-        std::unique_ptr<e::buffer> msg;
-        busybee_returncode rc = m_busybee->recv(recv_timeout, &sid_num, &msg);
+        std::unique_ptr<e::buffer> bbmsg;
+        busybee_returncode rc = m_busybee->recv(recv_timeout, &sid_num, &bbmsg);
         server_id id(sid_num);
 
         switch (rc)
@@ -867,6 +868,8 @@ admin :: loop(int timeout, hyperdex_admin_returncode* status)
             default:
                 abort();
         }
+
+        std::unique_ptr<e::buffer> msg(std::move(bbmsg));
 
         e::unpacker up = msg->unpack_from(BUSYBEE_HEADER_SIZE);
         uint8_t mt;
@@ -1076,7 +1079,7 @@ admin :: send(network_msgtype mt,
     const uint64_t version = m_config.version();
     msg->pack_at(BUSYBEE_HEADER_SIZE)
         << type << flags << version << uint64_t(UINT64_MAX) << nonce;
-    switch (m_busybee->send(id.get(), std::move(msg)))
+    switch (m_busybee->send(id.get(), busybee_auto_ptr(std::move(msg))))
     {
         case BUSYBEE_SUCCESS:
             op->handle_sent_to(id);
@@ -1096,6 +1099,8 @@ admin :: send(network_msgtype mt,
         default:
             abort();
     }
+
+    return false;
 }
 
 void

@@ -44,7 +44,7 @@ class mapper : public ::busybee_controller
         ~mapper() throw ();
 
     public:
-        virtual bool lookup(uint64_t id, po6::net::location* addr);
+        virtual po6::net::location lookup(uint64_t id);
 
     private:
         mapper(const mapper&);
