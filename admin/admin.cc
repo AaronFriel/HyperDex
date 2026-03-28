@@ -804,16 +804,34 @@ admin :: loop(int timeout, hyperdex_admin_returncode* status)
             recv_timeout = timeout;
         }
 
-        if (m_handle_coord_ops)
+        bool coord_only =
+            !m_handle_coord_ops &&
+            !m_coord_ops.empty() &&
+            m_server_ops.empty() &&
+            !m_pcs;
+
+        if (m_handle_coord_ops || coord_only)
         {
+            int coord_timeout = m_handle_coord_ops ? 0 : recv_timeout;
             m_handle_coord_ops = false;
             replicant_returncode lrc = REPLICANT_GARBAGE;
-            int64_t lid = replicant_client_loop(m_coord, 0, &lrc);
+            int64_t lid = replicant_client_loop(m_coord, coord_timeout, &lrc);
 
             if (lid < 0 && lrc != REPLICANT_TIMEOUT)
             {
                 interpret_replicant_returncode(lrc, status, &m_last_error);
                 return -1;
+            }
+
+            if (lid < 0 && lrc == REPLICANT_TIMEOUT)
+            {
+                if (coord_only)
+                {
+                    ERROR(TIMEOUT) << "operation timed out";
+                    return -1;
+                }
+
+                continue;
             }
 
             coord_rpc_map_t::iterator it = m_coord_ops.find(lid);
