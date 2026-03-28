@@ -557,7 +557,7 @@ client :: loop(int timeout, hyperdex_client_returncode* status)
         }
 
         uint64_t sid_num;
-        std::auto_ptr<e::buffer> bbmsg;
+        std::unique_ptr<e::buffer> bbmsg;
         busybee_returncode rc = m_busybee->recv(timeout, &sid_num, &bbmsg);
         server_id id(sid_num);
 
@@ -584,7 +584,7 @@ client :: loop(int timeout, hyperdex_client_returncode* status)
                 return -1;
         }
 
-        std::unique_ptr<e::buffer> msg(busybee_unique_ptr(&bbmsg));
+        std::unique_ptr<e::buffer> msg(std::move(bbmsg));
 
         e::unpacker up = msg->unpack_from(BUSYBEE_HEADER_SIZE);
         uint8_t mt;

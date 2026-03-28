@@ -103,12 +103,12 @@ hyperdex_admin_raw_backup(const char* host, uint16_t port,
                 abort();
         }
 
-        std::auto_ptr<e::buffer> bbmsg;
+        std::unique_ptr<e::buffer> bbmsg;
 
         switch (bbs->recv(-1, &bbmsg))
         {
             case BUSYBEE_SUCCESS:
-                msg = busybee_unique_ptr(&bbmsg);
+                msg = std::move(bbmsg);
                 break;
             case BUSYBEE_TIMEOUT:
                 *status = HYPERDEX_ADMIN_TIMEOUT;
