@@ -105,7 +105,12 @@ pending_count :: handle_message(client* cl,
     }
 
     *m_count += local_count;
-    // Don't set the status or error so that errors will carry through.  It was
-    // set to the success state in the constructor
+
+    if (this->aggregation_done())
+    {
+        set_status(HYPERDEX_CLIENT_SUCCESS);
+        set_error(e::error());
+    }
+
     return true;
 }
