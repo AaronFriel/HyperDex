@@ -43,6 +43,7 @@
 #include "visibility.h"
 #include "common/attribute_check.h"
 #include "common/auth_wallet.h"
+#include "common/busybee_buffer.h"
 #include "common/datatype_info.h"
 #include "common/documents.h"
 #include "common/funcall.h"
@@ -556,8 +557,8 @@ client :: loop(int timeout, hyperdex_client_returncode* status)
         }
 
         uint64_t sid_num;
-        std::unique_ptr<e::buffer> msg;
-        busybee_returncode rc = m_busybee->recv(timeout, &sid_num, &msg);
+        std::auto_ptr<e::buffer> bbmsg;
+        busybee_returncode rc = m_busybee->recv(timeout, &sid_num, &bbmsg);
         server_id id(sid_num);
 
         switch (rc)
@@ -582,6 +583,8 @@ client :: loop(int timeout, hyperdex_client_returncode* status)
                                 << (unsigned) rc << ": please file a bug";
                 return -1;
         }
+
+        std::unique_ptr<e::buffer> msg(busybee_unique_ptr(&bbmsg));
 
         e::unpacker up = msg->unpack_from(BUSYBEE_HEADER_SIZE);
         uint8_t mt;
@@ -1201,7 +1204,7 @@ client :: send(network_msgtype mt,
     msg->pack_at(BUSYBEE_HEADER_SIZE)
         << type << flags << version << to << nonce;
     server_id id = m_config.get_server_id(to);
-    busybee_returncode rc = m_busybee->send(id.get(), std::move(msg));
+    busybee_returncode rc = m_busybee->send(id.get(), busybee_auto_ptr(std::move(msg)));
 
     switch (rc)
     {
@@ -1252,7 +1255,11 @@ client :: send_keyop(const char* space,
     }
     else
     {
-        ERROR(RECONFIGURE) << "could not send " << mt << " to " << vsi;
+        if (*status == HYPERDEX_CLIENT_SUCCESS)
+        {
+            ERROR(RECONFIGURE) << "could not send " << mt << " to " << vsi;
+        }
+
         return -1;
     }
 }

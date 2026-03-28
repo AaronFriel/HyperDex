@@ -37,6 +37,7 @@
 // HyperDex
 #include "daemon/communication.h"
 #include <memory>
+#include "common/busybee_buffer.h"
 #include "daemon/daemon.h"
 
 using hyperdex::communication;
@@ -143,7 +144,7 @@ communication :: reconfigure(const configuration&,
     {
         if (em.config_version <= new_config.version())
         {
-            m_busybee->deliver(em.id, std::move(em.msg));
+            m_busybee->deliver(em.id, busybee_auto_ptr(std::move(em.msg)));
         }
         else
         {
@@ -180,11 +181,11 @@ communication :: send_client(const virtual_server_id& from,
 
     if (to == m_daemon->m_us)
     {
-        m_busybee->deliver(to.get(), std::move(msg));
+        m_busybee->deliver(to.get(), busybee_auto_ptr(std::move(msg)));
     }
     else
     {
-        busybee_returncode rc = m_busybee->send(to.get(), std::move(msg));
+        busybee_returncode rc = m_busybee->send(to.get(), busybee_auto_ptr(std::move(msg)));
 
         switch (rc)
         {
@@ -235,11 +236,11 @@ communication :: send(const virtual_server_id& from,
 
     if (to == m_daemon->m_us)
     {
-        m_busybee->deliver(to.get(), std::move(msg));
+        m_busybee->deliver(to.get(), busybee_auto_ptr(std::move(msg)));
     }
     else
     {
-        busybee_returncode rc = m_busybee->send(to.get(), std::move(msg));
+        busybee_returncode rc = m_busybee->send(to.get(), busybee_auto_ptr(std::move(msg)));
 
         switch (rc)
         {
@@ -291,11 +292,11 @@ communication :: send(const virtual_server_id& from,
 
     if (to == m_daemon->m_us)
     {
-        m_busybee->deliver(to.get(), std::move(msg));
+        m_busybee->deliver(to.get(), busybee_auto_ptr(std::move(msg)));
     }
     else
     {
-        busybee_returncode rc = m_busybee->send(to.get(), std::move(msg));
+        busybee_returncode rc = m_busybee->send(to.get(), busybee_auto_ptr(std::move(msg)));
 
         switch (rc)
         {
@@ -340,11 +341,11 @@ communication :: send(const virtual_server_id& vto,
 
     if (to == m_daemon->m_us)
     {
-        m_busybee->deliver(to.get(), std::move(msg));
+        m_busybee->deliver(to.get(), busybee_auto_ptr(std::move(msg)));
     }
     else
     {
-        busybee_returncode rc = m_busybee->send(to.get(), std::move(msg));
+        busybee_returncode rc = m_busybee->send(to.get(), busybee_auto_ptr(std::move(msg)));
 
         switch (rc)
         {
@@ -395,11 +396,11 @@ communication :: send_exact(const virtual_server_id& from,
 
     if (to == m_daemon->m_us)
     {
-        m_busybee->deliver(to.get(), std::move(msg));
+        m_busybee->deliver(to.get(), busybee_auto_ptr(std::move(msg)));
     }
     else
     {
-        busybee_returncode rc = m_busybee->send(to.get(), std::move(msg));
+        busybee_returncode rc = m_busybee->send(to.get(), busybee_auto_ptr(std::move(msg)));
 
         switch (rc)
         {
@@ -439,11 +440,13 @@ communication :: recv(e::garbage_collector::thread_state* ts,
     while (true)
     {
         uint64_t id;
-        busybee_returncode rc = m_busybee->recv(ts, -1, &id, msg);
+        std::auto_ptr<e::buffer> bbmsg;
+        busybee_returncode rc = m_busybee->recv(ts, -1, &id, &bbmsg);
 
         switch (rc)
         {
             case BUSYBEE_SUCCESS:
+                *msg = busybee_unique_ptr(&bbmsg);
                 break;
             case BUSYBEE_SHUTDOWN:
                 return false;
@@ -522,7 +525,7 @@ communication :: recv(e::garbage_collector::thread_state* ts,
         {
             mt = static_cast<uint8_t>(CONFIGMISMATCH);
             (*msg)->pack_at(BUSYBEE_HEADER_SIZE) << mt;
-            m_busybee->send(id, std::move(*msg));
+            m_busybee->send(id, busybee_auto_ptr(std::move(*msg)));
         }
     }
 }

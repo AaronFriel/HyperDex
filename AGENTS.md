@@ -7,6 +7,10 @@
 
 Prefer getting the repository into a working state over completing tasks.
 
-- Before you can start working on the code, check `.agent/setup.log` to see if any errors were reported. 
+- Before you can start working on the code, check `.agent/setup.log` to see if any errors were reported.
     - If any errors were reported, you will need to fix them before you can start working on the code.
 
+
+## Subagents
+
+Never specify a model or reasoning effort with spawn_agent.
