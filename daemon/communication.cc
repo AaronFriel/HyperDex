@@ -440,13 +440,13 @@ communication :: recv(e::garbage_collector::thread_state* ts,
     while (true)
     {
         uint64_t id;
-        std::auto_ptr<e::buffer> bbmsg;
+        std::unique_ptr<e::buffer> bbmsg;
         busybee_returncode rc = m_busybee->recv(ts, -1, &id, &bbmsg);
 
         switch (rc)
         {
             case BUSYBEE_SUCCESS:
-                *msg = busybee_unique_ptr(&bbmsg);
+                *msg = std::move(bbmsg);
                 break;
             case BUSYBEE_SHUTDOWN:
                 return false;
