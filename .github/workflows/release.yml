@@ -59,25 +59,20 @@ jobs:
         echo "tarball=hyperdex-${TAG}-linux-amd64.tar.gz" >> "$GITHUB_OUTPUT"
 
     - name: Tag & create release
+      if: github.event_name != 'pull_request'
       id: release
       env:
         TAG: ${{ steps.bump.outputs.next }}
         TARBALL: ${{ steps.pack.outputs.tarball }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        EVENT_NAME: ${{ github.event_name }}
       run: |
         git config user.name  "GitHub Actions"
         git config user.email "actions@github.com"
-        if [ "$EVENT_NAME" != "pull_request" ]; then
-          git tag "$TAG"
-          git push origin "$TAG"
-          DRAFT_FLAG="--draft=false"
-        else
-          DRAFT_FLAG="--draft"
-        fi
+        git tag "$TAG"
+        git push origin "$TAG"
         gh release create "$TAG" \
           --title "HyperDex $TAG" \
           --notes "Automated build of HyperDex $TAG" \
           --verify-tag \
-          $DRAFT_FLAG \
+          --draft=false \
           "$TARBALL"
