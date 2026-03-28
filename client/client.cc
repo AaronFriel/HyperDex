@@ -1201,6 +1201,10 @@ client :: send(network_msgtype mt,
     const uint8_t type = static_cast<uint8_t>(mt);
     const uint8_t flags = 0;
     const uint64_t version = m_config.version();
+    if (status)
+    {
+        *status = HYPERDEX_CLIENT_RECONFIGURE;
+    }
     msg->pack_at(BUSYBEE_HEADER_SIZE)
         << type << flags << version << to << nonce;
     server_id id = m_config.get_server_id(to);
